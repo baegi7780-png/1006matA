@@ -1,13 +1,14 @@
 package com.tech.motjip;
 
-import android.graphics.Rect;
 import android.animation.ObjectAnimator;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
@@ -15,12 +16,6 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.content.ClipData;
-import android.content.ClipboardManager;
-import android.content.Intent;
-import android.net.Uri;
-
-import java.util.List;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -34,15 +29,16 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.tech.motjip.API.ApiService;
 import com.tech.motjip.API.RetrofitClient;
+import com.tech.motjip.Adapter.ChatRoomAdapter;
 import com.tech.motjip.Adapter.ParticipantAdapter;
 import com.tech.motjip.Controller.MessageController;
 import com.tech.motjip.Model.ChatRoom;
 import com.tech.motjip.Model.Participant;
 
-
 import java.util.List;
 
 import okhttp3.ResponseBody;
+
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -51,6 +47,9 @@ public class MessageActivity extends AppCompatActivity {
 
     private static final String TAG =
             "MessageActivity";
+
+    private static final String CHAT_LINK_DEBUG =
+            "CHAT_LINK_DEBUG";
 
     private View rootView;
     private LinearLayout layoutChatBody;
@@ -73,15 +72,26 @@ public class MessageActivity extends AppCompatActivity {
 
     private MessageController messageController;
 
-    private long roomId = -1L;
-    private Long myMemberId = -1L;
+    private long roomId =
+            -1L;
 
-    private boolean isControllerStarted = false;
-    private boolean reopenMemberPanelAfterInvite = false;
-    private boolean isMemberPanelAnimating = false;
-    private boolean skipNextResumeMemberReload = false;
+    private Long myMemberId =
+            -1L;
 
-    private int defaultRecyclerBottomPadding = 16;
+    private boolean isControllerStarted =
+            false;
+
+    private boolean reopenMemberPanelAfterInvite =
+            false;
+
+    private boolean isMemberPanelAnimating =
+            false;
+
+    private boolean skipNextResumeMemberReload =
+            false;
+
+    private int defaultRecyclerBottomPadding =
+            16;
 
     private SharedPreferences activeRoomPrefs;
 
@@ -108,15 +118,18 @@ public class MessageActivity extends AppCompatActivity {
 
                             if (messageController != null) {
 
-                                messageController.forceReloadChatHistory();
+                                refreshCurrentRoomTitle();
                             }
 
                             if (reloadMembers) {
 
                                 if (reopenMemberPanelAfterInvite) {
 
-                                    reopenMemberPanelAfterInvite = false;
-                                    skipNextResumeMemberReload = true;
+                                    reopenMemberPanelAfterInvite =
+                                            false;
+
+                                    skipNextResumeMemberReload =
+                                            true;
 
                                     openMemberPanel();
 
@@ -149,25 +162,19 @@ public class MessageActivity extends AppCompatActivity {
                             if (mimeType != null
                                     && mimeType.startsWith("video")) {
 
-                                messageController
-                                        .uploadAndSendVideo(
-                                                uri
-                                        );
+                                messageController.uploadAndSendVideo(
+                                        uri
+                                );
 
                             } else {
 
-                                messageController
-                                        .uploadAndSendImage(
-                                                uri
-                                        );
+                                messageController.uploadAndSendImage(
+                                        uri
+                                );
                             }
                         }
                     }
             );
-
-
-
-
 
     @Override
     protected void onCreate(
@@ -178,12 +185,6 @@ public class MessageActivity extends AppCompatActivity {
                 savedInstanceState
         );
 
-        /*
-         * 키보드 처리는 WindowInsetsCompat에서 직접 처리한다.
-         *
-         * adjustResize가 기기별로 다르게 동작할 수 있으므로,
-         * layout_chat_body 전체에 ime/systemBars bottom 값을 직접 적용한다.
-         */
         getWindow().setSoftInputMode(
                 WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING
         );
@@ -192,6 +193,87 @@ public class MessageActivity extends AppCompatActivity {
                 R.layout.activity_message
         );
 
+        bindViews();
+
+        if (!validateViews()) {
+
+            Toast.makeText(
+                    this,
+                    "채팅 화면을 불러올 수 없습니다.",
+                    Toast.LENGTH_SHORT
+            ).show();
+
+            finish();
+
+            return;
+        }
+
+        setupRecyclerViews();
+
+        setupKeyboardInsets();
+
+        SharedPreferences prefs =
+                getSharedPreferences(
+                        "auth",
+                        MODE_PRIVATE
+                );
+
+        activeRoomPrefs =
+                getSharedPreferences(
+                        "chat_state",
+                        MODE_PRIVATE
+                );
+
+        myMemberId =
+                prefs.getLong(
+                        "memberId",
+                        -1L
+                );
+
+        Log.e(
+                CHAT_LINK_DEBUG,
+                "onCreate myMemberId="
+                        + myMemberId
+        );
+
+        setupClickListeners();
+
+        Intent intent =
+                getIntent();
+
+        Uri deepLinkData =
+                intent != null
+                        ? intent.getData()
+                        : null;
+
+        Log.e(
+                CHAT_LINK_DEBUG,
+                "onCreate intent="
+                        + intent
+                        + ", deepLinkData="
+                        + deepLinkData
+        );
+
+        if (deepLinkData != null) {
+
+            handleInviteLink(
+                    deepLinkData
+            );
+
+            return;
+        }
+
+        if (!initializeRoomFromIntent(
+                intent
+        )) {
+
+            return;
+        }
+
+        startChatController();
+    }
+
+    private void bindViews() {
 
         rootView =
                 findViewById(
@@ -201,11 +283,6 @@ public class MessageActivity extends AppCompatActivity {
         layoutChatBody =
                 findViewById(
                         R.id.layout_chat_body
-                );
-
-        ImageView btnBack =
-                findViewById(
-                        R.id.btn_custom_back
                 );
 
         btnChatMenu =
@@ -242,8 +319,6 @@ public class MessageActivity extends AppCompatActivity {
                 findViewById(
                         R.id.btn_select_image
                 );
-
-
 
         layoutMemberPanel =
                 findViewById(
@@ -284,36 +359,36 @@ public class MessageActivity extends AppCompatActivity {
                 findViewById(
                         R.id.btn_leave_chat_room
                 );
+    }
 
-        if (rootView == null
-                || layoutChatBody == null
-                || recyclerView == null
-                || layoutInput == null
-                || etMessage == null
-                || btnSend == null
-                || btnSelectImage == null
-                || btnBack == null
-                || btnChatMenu == null
-                || tvTitle == null
-                || layoutMemberPanel == null
-                || viewMemberPanelDim == null
-                || rvMemberPanelList == null
-                || tvMemberLoading == null
-                || btnCloseMemberPanel == null
-                || btnInviteFromMemberPanel == null
-                || btnShareInviteLink == null
-                || btnLeaveChatRoom == null) {
+    private boolean validateViews() {
 
-            Toast.makeText(
-                    this,
-                    "채팅 화면을 불러올 수 없습니다.",
-                    Toast.LENGTH_SHORT
-            ).show();
+        ImageView btnBack =
+                findViewById(
+                        R.id.btn_custom_back
+                );
 
-            finish();
+        return rootView != null
+                && layoutChatBody != null
+                && recyclerView != null
+                && layoutInput != null
+                && etMessage != null
+                && btnSend != null
+                && btnSelectImage != null
+                && btnBack != null
+                && btnChatMenu != null
+                && tvTitle != null
+                && layoutMemberPanel != null
+                && viewMemberPanelDim != null
+                && rvMemberPanelList != null
+                && tvMemberLoading != null
+                && btnCloseMemberPanel != null
+                && btnInviteFromMemberPanel != null
+                && btnShareInviteLink != null
+                && btnLeaveChatRoom != null;
+    }
 
-            return;
-        }
+    private void setupRecyclerViews() {
 
         defaultRecyclerBottomPadding =
                 recyclerView.getPaddingBottom();
@@ -336,70 +411,14 @@ public class MessageActivity extends AppCompatActivity {
                         this
                 )
         );
+    }
 
-        setupKeyboardInsets();
+    private void setupClickListeners() {
 
-        Log.e(
-                TAG,
-                "setupKeyboardInsets 실행 직전"
-        );
-
-        setupKeyboardInsets();
-
-        SharedPreferences prefs =
-                getSharedPreferences(
-                        "auth",
-                        MODE_PRIVATE
+        ImageView btnBack =
+                findViewById(
+                        R.id.btn_custom_back
                 );
-
-        activeRoomPrefs =
-                getSharedPreferences(
-                        "chat_state",
-                        MODE_PRIVATE
-                );
-
-        myMemberId =
-                prefs.getLong(
-                        "memberId",
-                        -1L
-                );
-
-
-
-        Intent intent =
-                getIntent();
-
-        Uri deepLinkData =
-                intent.getData();
-
-        if (deepLinkData != null) {
-
-            handleInviteLink();
-
-        } else {
-
-            if (!initializeRoomFromIntent(
-                    intent
-            )) {
-
-                return;
-            }
-
-            if (roomId > 0) {
-
-                messageController =
-                        new MessageController(
-                                this,
-                                recyclerView,
-                                etMessage,
-                                roomId
-                        );
-
-                messageController.start();
-
-                isControllerStarted = true;
-            }
-        }
 
         btnBack.setOnClickListener(v -> {
 
@@ -428,7 +447,8 @@ public class MessageActivity extends AppCompatActivity {
 
         btnInviteFromMemberPanel.setOnClickListener(v -> {
 
-            reopenMemberPanelAfterInvite = true;
+            reopenMemberPanelAfterInvite =
+                    true;
 
             closeMemberPanel();
 
@@ -443,10 +463,6 @@ public class MessageActivity extends AppCompatActivity {
                 showLeaveChatRoomDialog()
         );
 
-
-
-
-
         btnSend.setOnClickListener(v -> {
 
             if (messageController == null) {
@@ -459,8 +475,6 @@ public class MessageActivity extends AppCompatActivity {
 
                 return;
             }
-
-
 
             messageController.sendMessageFromInput();
         });
@@ -503,24 +517,6 @@ public class MessageActivity extends AppCompatActivity {
                     )
                     .show();
         });
-
-
-
-
-
-        recyclerView.postDelayed(() -> {
-
-            if (messageController != null) {
-
-                Log.d(
-                        TAG,
-                        "최초 진입 안정화 재동기화 실행"
-                );
-
-                messageController.forceReloadChatHistory();
-            }
-
-        }, 700);
     }
 
     @Override
@@ -536,26 +532,36 @@ public class MessageActivity extends AppCompatActivity {
                 intent
         );
 
-        Log.d(
-                TAG,
-                "onNewIntent 호출"
+        Log.e(
+                CHAT_LINK_DEBUG,
+                "onNewIntent intent="
+                        + intent
         );
 
         Uri data =
-                intent.getData();
+                intent != null
+                        ? intent.getData()
+                        : null;
+
+        Log.e(
+                CHAT_LINK_DEBUG,
+                "onNewIntent data="
+                        + data
+        );
 
         if (data != null) {
 
-            handleInviteLink();
-
-        } else {
-
-            handleNotificationIntent(
-                    intent
+            handleInviteLink(
+                    data
             );
-        }
-    }
 
+            return;
+        }
+
+        handleNotificationIntent(
+                intent
+        );
+    }
 
     private boolean initializeRoomFromIntent(
             Intent intent
@@ -580,6 +586,19 @@ public class MessageActivity extends AppCompatActivity {
                         -1L
                 );
 
+        String roomName =
+                intent.getStringExtra(
+                        "roomName"
+                );
+
+        Log.e(
+                CHAT_LINK_DEBUG,
+                "initializeRoomFromIntent roomId="
+                        + roomId
+                        + ", roomName="
+                        + roomName
+        );
+
         if (roomId <= 0) {
 
             Toast.makeText(
@@ -592,11 +611,6 @@ public class MessageActivity extends AppCompatActivity {
 
             return false;
         }
-
-        String roomName =
-                intent.getStringExtra(
-                        "roomName"
-                );
 
         applyRoomTitle(
                 roomName
@@ -613,79 +627,25 @@ public class MessageActivity extends AppCompatActivity {
         return true;
     }
 
-    private void handleNotificationIntent(
-            Intent intent
-    ) {
+    private void startChatController() {
 
-        if (intent == null) {
-
-            Log.e(
-                    TAG,
-                    "handleNotificationIntent intent null"
-            );
-
-            return;
-        }
-
-        long newRoomId =
-                intent.getLongExtra(
-                        "roomId",
-                        -1L
-                );
-
-        if (newRoomId <= 0) {
-
-            Log.e(
-                    TAG,
-                    "푸시 roomId 없음"
-            );
-
-            return;
-        }
-
-        if (newRoomId == roomId) {
-
-            Log.d(
-                    TAG,
-                    "이미 같은 채팅방 roomId="
-                            + newRoomId
-            );
-
-            if (messageController != null) {
-
-                messageController.forceReloadChatHistory();
-            }
-
-            return;
-        }
-
-        Log.d(
-                TAG,
-                "푸시 채팅방 이동 oldRoomId="
+        Log.e(
+                CHAT_LINK_DEBUG,
+                "startChatController roomId="
                         + roomId
-                        + ", newRoomId="
-                        + newRoomId
         );
 
-        clearActiveChatRoom();
+        if (roomId <= 0) {
 
-        roomId =
-                newRoomId;
+            Toast.makeText(
+                    this,
+                    "채팅방 정보를 찾을 수 없습니다.",
+                    Toast.LENGTH_SHORT
+            ).show();
 
-        String roomName =
-                intent.getStringExtra(
-                        "roomName"
-                );
+            finish();
 
-        applyRoomTitle(
-                roomName
-        );
-
-        if (layoutMemberPanel != null
-                && layoutMemberPanel.getVisibility()
-                == View.VISIBLE) {
-
-            closeMemberPanel();
+            return;
         }
 
         if (messageController != null) {
@@ -710,28 +670,84 @@ public class MessageActivity extends AppCompatActivity {
                 true;
 
         saveActiveChatRoom();
+    }
 
-        recyclerView.postDelayed(() -> {
+    private void handleNotificationIntent(
+            Intent intent
+    ) {
+
+        if (intent == null) {
+
+            Log.e(
+                    TAG,
+                    "handleNotificationIntent intent null"
+            );
+
+            return;
+        }
+
+        long newRoomId =
+                intent.getLongExtra(
+                        "roomId",
+                        -1L
+                );
+
+        Log.e(
+                CHAT_LINK_DEBUG,
+                "handleNotificationIntent newRoomId="
+                        + newRoomId
+        );
+
+        if (newRoomId <= 0) {
+
+            Log.e(
+                    TAG,
+                    "푸시 roomId 없음"
+            );
+
+            return;
+        }
+
+        if (newRoomId == roomId) {
+
+            Log.d(
+                    TAG,
+                    "이미 같은 채팅방 roomId="
+                            + newRoomId
+            );
 
             if (messageController != null) {
 
-                Log.d(
-                        TAG,
-                        "푸시 이동 후 안정화 재동기화 실행"
-                );
-
-                messageController.forceReloadChatHistory();
+                refreshCurrentRoomTitle();
             }
 
-        }, 700);
+            return;
+        }
+
+        clearActiveChatRoom();
+
+        roomId =
+                newRoomId;
+
+        String roomName =
+                intent.getStringExtra(
+                        "roomName"
+                );
+
+        applyRoomTitle(
+                roomName
+        );
+
+        if (layoutMemberPanel != null
+                && layoutMemberPanel.getVisibility()
+                == View.VISIBLE) {
+
+            closeMemberPanel();
+        }
+
+        startChatController();
 
         scrollRecyclerViewToBottom();
-
-        Log.d(
-                TAG,
-                "새 채팅방으로 교체 완료 roomId="
-                        + roomId
-        );
     }
 
     private void applyRoomTitle(
@@ -758,6 +774,385 @@ public class MessageActivity extends AppCompatActivity {
         }
     }
 
+    public void refreshCurrentRoomTitle() {
+
+        if (roomId <= 0
+                || myMemberId == null
+                || myMemberId <= 0) {
+
+            return;
+        }
+
+        ApiService apiService =
+                RetrofitClient.getApiService(
+                        this
+                );
+
+        apiService.getMyRooms(
+                myMemberId
+        ).enqueue(new Callback<List<ChatRoom>>() {
+
+            @Override
+            public void onResponse(
+                    Call<List<ChatRoom>> call,
+                    Response<List<ChatRoom>> response
+            ) {
+
+                if (!response.isSuccessful()
+                        || response.body() == null) {
+
+                    return;
+                }
+
+                for (ChatRoom room : response.body()) {
+
+                    if (room == null
+                            || room.getRoomId() == null) {
+
+                        continue;
+                    }
+
+                    if (room.getRoomId().equals(
+                            roomId
+                    )) {
+
+                        applyRoomTitle(
+                                ChatRoomAdapter.getDisplayRoomName(
+                                        room
+                                )
+                        );
+
+                        return;
+                    }
+                }
+            }
+
+            @Override
+            public void onFailure(
+                    Call<List<ChatRoom>> call,
+                    Throwable t
+            ) {
+
+                Log.e(
+                        TAG,
+                        "채팅방 제목 갱신 실패",
+                        t
+                );
+            }
+        });
+    }
+
+    private void handleInviteLink(
+            Uri data
+    ) {
+
+        Log.e(
+                CHAT_LINK_DEBUG,
+                "handleInviteLink data="
+                        + data
+        );
+
+        if (data == null) {
+
+            Toast.makeText(
+                    this,
+                    "초대 링크 정보가 없습니다.",
+                    Toast.LENGTH_SHORT
+            ).show();
+
+            finish();
+
+            return;
+        }
+
+        String inviteCode =
+                extractInviteCode(
+                        data
+                );
+
+        Log.e(
+                CHAT_LINK_DEBUG,
+                "handleInviteLink inviteCode="
+                        + inviteCode
+        );
+
+        if (inviteCode == null
+                || inviteCode.trim().isEmpty()) {
+
+            Toast.makeText(
+                    this,
+                    "초대코드를 찾을 수 없습니다.",
+                    Toast.LENGTH_SHORT
+            ).show();
+
+            finish();
+
+            return;
+        }
+
+        joinRoomByInviteCode(
+                inviteCode
+        );
+    }
+
+    private String extractInviteCode(
+            Uri uri
+    ) {
+
+        if (uri == null
+                || uri.getPathSegments() == null
+                || uri.getPathSegments().isEmpty()) {
+
+            return null;
+        }
+
+        List<String> segments =
+                uri.getPathSegments();
+
+        Log.e(
+                CHAT_LINK_DEBUG,
+                "extractInviteCode segments="
+                        + segments
+        );
+
+        for (int i = 0; i < segments.size(); i++) {
+
+            String segment =
+                    segments.get(
+                            i
+                    );
+
+            if ("invite".equalsIgnoreCase(
+                    segment
+            )
+                    && i + 1 < segments.size()) {
+
+                String inviteCode =
+                        segments.get(
+                                i + 1
+                        );
+
+                if (inviteCode != null
+                        && !inviteCode.trim().isEmpty()
+                        && !"join".equalsIgnoreCase(
+                        inviteCode
+                )) {
+
+                    return inviteCode.trim();
+                }
+            }
+        }
+
+        String lastSegment =
+                uri.getLastPathSegment();
+
+        if (lastSegment != null
+                && !lastSegment.trim().isEmpty()
+                && !"join".equalsIgnoreCase(
+                lastSegment
+        )) {
+
+            return lastSegment.trim();
+        }
+
+        return null;
+    }
+
+    private void joinRoomByInviteCode(
+            String inviteCode
+    ) {
+
+        Log.e(
+                CHAT_LINK_DEBUG,
+                "joinRoomByInviteCode start inviteCode="
+                        + inviteCode
+                        + ", myMemberId="
+                        + myMemberId
+        );
+
+        if (myMemberId == null
+                || myMemberId <= 0) {
+
+            Toast.makeText(
+                    this,
+                    "로그인 정보가 없습니다.",
+                    Toast.LENGTH_SHORT
+            ).show();
+
+            finish();
+
+            return;
+        }
+
+        ApiService api =
+                RetrofitClient.getApiService(
+                        this
+                );
+
+        api.joinRoomByInviteCode(
+                inviteCode,
+                myMemberId
+        ).enqueue(new Callback<ResponseBody>() {
+
+            @Override
+            public void onResponse(
+                    Call<ResponseBody> call,
+                    Response<ResponseBody> response
+            ) {
+
+                Log.e(
+                        CHAT_LINK_DEBUG,
+                        "joinRoomByInviteCode response code="
+                                + response.code()
+                                + ", success="
+                                + response.isSuccessful()
+                );
+
+                if (response.isSuccessful()) {
+
+                    loadRoomByInviteCode(
+                            inviteCode
+                    );
+
+                } else {
+
+                    Toast.makeText(
+                            MessageActivity.this,
+                            "채팅방 참여 실패",
+                            Toast.LENGTH_SHORT
+                    ).show();
+
+                    finish();
+                }
+            }
+
+            @Override
+            public void onFailure(
+                    Call<ResponseBody> call,
+                    Throwable t
+            ) {
+
+                Log.e(
+                        CHAT_LINK_DEBUG,
+                        "joinRoomByInviteCode failure",
+                        t
+                );
+
+                Toast.makeText(
+                        MessageActivity.this,
+                        "서버 연결 실패",
+                        Toast.LENGTH_SHORT
+                ).show();
+
+                finish();
+            }
+        });
+    }
+
+    private void loadRoomByInviteCode(
+            String inviteCode
+    ) {
+
+        Log.e(
+                CHAT_LINK_DEBUG,
+                "loadRoomByInviteCode start inviteCode="
+                        + inviteCode
+        );
+
+        ApiService api =
+                RetrofitClient.getApiService(
+                        this
+                );
+
+        api.getRoomByInviteCode(
+                inviteCode
+        ).enqueue(new Callback<ChatRoom>() {
+
+            @Override
+            public void onResponse(
+                    Call<ChatRoom> call,
+                    Response<ChatRoom> response
+            ) {
+
+                Log.e(
+                        CHAT_LINK_DEBUG,
+                        "loadRoomByInviteCode response code="
+                                + response.code()
+                                + ", success="
+                                + response.isSuccessful()
+                                + ", body="
+                                + response.body()
+                );
+
+                if (!response.isSuccessful()
+                        || response.body() == null
+                        || response.body().getRoomId() == null) {
+
+                    Toast.makeText(
+                            MessageActivity.this,
+                            "채팅방 정보를 불러오지 못했습니다.",
+                            Toast.LENGTH_SHORT
+                    ).show();
+
+                    finish();
+
+                    return;
+                }
+
+                ChatRoom room =
+                        response.body();
+
+                roomId =
+                        room.getRoomId();
+
+                Log.e(
+                        CHAT_LINK_DEBUG,
+                        "loadRoomByInviteCode result roomId="
+                                + roomId
+                                + ", roomName="
+                                + room.getRoomName()
+                                + ", roomType="
+                                + room.getRoomType()
+                );
+
+                applyRoomTitle(
+                        ChatRoomAdapter.getDisplayRoomName(
+                                room
+                        )
+                );
+
+                Toast.makeText(
+                        MessageActivity.this,
+                        "채팅방에 참여했습니다.",
+                        Toast.LENGTH_SHORT
+                ).show();
+
+                startChatController();
+            }
+
+            @Override
+            public void onFailure(
+                    Call<ChatRoom> call,
+                    Throwable t
+            ) {
+
+                Log.e(
+                        CHAT_LINK_DEBUG,
+                        "loadRoomByInviteCode failure",
+                        t
+                );
+
+                Toast.makeText(
+                        MessageActivity.this,
+                        "채팅방 정보 조회 실패",
+                        Toast.LENGTH_SHORT
+                ).show();
+
+                finish();
+            }
+        });
+    }
+
     private void shareInviteLink() {
 
         if (roomId <= 0
@@ -779,108 +1174,130 @@ public class MessageActivity extends AppCompatActivity {
                 );
 
         apiService.getMyRooms(
-                        myMemberId
-                )
-                .enqueue(new Callback<List<ChatRoom>>() {
+                myMemberId
+        ).enqueue(new Callback<List<ChatRoom>>() {
 
-                    @Override
-                    public void onResponse(
-                            Call<List<ChatRoom>> call,
-                            Response<List<ChatRoom>> response
-                    ) {
+            @Override
+            public void onResponse(
+                    Call<List<ChatRoom>> call,
+                    Response<List<ChatRoom>> response
+            ) {
 
-                        if (!response.isSuccessful()
-                                || response.body() == null) {
+                if (!response.isSuccessful()
+                        || response.body() == null) {
 
-                            Toast.makeText(
-                                    MessageActivity.this,
-                                    "초대 링크를 불러오지 못했습니다.",
-                                    Toast.LENGTH_SHORT
-                            ).show();
+                    Toast.makeText(
+                            MessageActivity.this,
+                            "초대 링크를 불러오지 못했습니다.",
+                            Toast.LENGTH_SHORT
+                    ).show();
 
-                            return;
-                        }
+                    return;
+                }
 
-                        ChatRoom targetRoom =
-                                null;
+                ChatRoom targetRoom =
+                        null;
 
-                        for (ChatRoom room : response.body()) {
+                for (ChatRoom room : response.body()) {
 
-                            if (room != null
-                                    && room.getRoomId() != null
-                                    && room.getRoomId().equals(
-                                    roomId
-                            )) {
+                    if (room != null
+                            && room.getRoomId() != null
+                            && room.getRoomId().equals(
+                            roomId
+                    )) {
 
-                                targetRoom =
-                                        room;
+                        targetRoom =
+                                room;
 
-                                break;
-                            }
-                        }
+                        break;
+                    }
+                }
 
-                        if (targetRoom == null
-                                || targetRoom.getInviteUrl() == null
-                                || targetRoom.getInviteUrl()
-                                .trim()
-                                .isEmpty()) {
+                if (targetRoom == null
+                        || targetRoom.getInviteUrl() == null
+                        || targetRoom.getInviteUrl()
+                        .trim()
+                        .isEmpty()) {
 
-                            Toast.makeText(
-                                    MessageActivity.this,
-                                    "초대 링크가 없습니다.",
-                                    Toast.LENGTH_SHORT
-                            ).show();
+                    Toast.makeText(
+                            MessageActivity.this,
+                            "초대 링크가 없습니다.",
+                            Toast.LENGTH_SHORT
+                    ).show();
 
-                            return;
-                        }
+                    return;
+                }
 
-                        String inviteUrl =
-                                targetRoom.getInviteUrl();
+                String inviteUrl =
+                        targetRoom.getInviteUrl();
 
-                        ClipboardManager clipboard =
-                                (ClipboardManager)
-                                        getSystemService(
-                                                CLIPBOARD_SERVICE
-                                        );
-
-                        ClipData clip =
-                                ClipData.newPlainText(
-                                        "invite_link",
-                                        inviteUrl
+                ClipboardManager clipboard =
+                        (ClipboardManager)
+                                getSystemService(
+                                        CLIPBOARD_SERVICE
                                 );
 
-                        clipboard.setPrimaryClip(
-                                clip
+                ClipData clip =
+                        ClipData.newPlainText(
+                                "invite_link",
+                                inviteUrl
                         );
 
-                        Toast.makeText(
-                                MessageActivity.this,
-                                "초대 링크가 복사되었습니다.",
-                                Toast.LENGTH_SHORT
-                        ).show();
+                if (clipboard != null) {
 
+                    clipboard.setPrimaryClip(
+                            clip
+                    );
+                }
 
-                    }
+                Toast.makeText(
+                        MessageActivity.this,
+                        "초대 링크가 복사되었습니다.",
+                        Toast.LENGTH_SHORT
+                ).show();
 
-                    @Override
-                    public void onFailure(
-                            Call<List<ChatRoom>> call,
-                            Throwable t
-                    ) {
-
-                        Log.e(
-                                "CHAT_INVITE_LINK",
-                                "초대 링크 조회 실패",
-                                t
+                Intent shareIntent =
+                        new Intent(
+                                Intent.ACTION_SEND
                         );
 
-                        Toast.makeText(
-                                MessageActivity.this,
-                                "서버 연결 실패",
-                                Toast.LENGTH_SHORT
-                        ).show();
-                    }
-                });
+                shareIntent.setType(
+                        "text/plain"
+                );
+
+                shareIntent.putExtra(
+                        Intent.EXTRA_TEXT,
+                        "같이 밥 먹으러 와!\n\n"
+                                + inviteUrl
+                );
+
+                startActivity(
+                        Intent.createChooser(
+                                shareIntent,
+                                "초대 링크 공유"
+                        )
+                );
+            }
+
+            @Override
+            public void onFailure(
+                    Call<List<ChatRoom>> call,
+                    Throwable t
+            ) {
+
+                Log.e(
+                        "CHAT_INVITE_LINK",
+                        "초대 링크 조회 실패",
+                        t
+                );
+
+                Toast.makeText(
+                        MessageActivity.this,
+                        "서버 연결 실패",
+                        Toast.LENGTH_SHORT
+                ).show();
+            }
+        });
     }
 
     private void openMemberPanel() {
@@ -1035,14 +1452,8 @@ public class MessageActivity extends AppCompatActivity {
                 null
         );
 
-        ApiService apiService =
-                RetrofitClient.getApiService(
-                        this
-                );
-
-        apiService.getRoomMembers(
-                        roomId
-                )
+        RetrofitClient.getApiService(this)
+                .getRoomMembers(roomId)
                 .enqueue(new Callback<List<Participant>>() {
 
                     @Override
@@ -1093,13 +1504,10 @@ public class MessageActivity extends AppCompatActivity {
                                 View.GONE
                         );
 
-                        ParticipantAdapter adapter =
+                        rvMemberPanelList.setAdapter(
                                 new ParticipantAdapter(
                                         participants
-                                );
-
-                        rvMemberPanelList.setAdapter(
-                                adapter
+                                )
                         );
                     }
 
@@ -1131,8 +1539,7 @@ public class MessageActivity extends AppCompatActivity {
                 .setMessage("정말 채팅방을 나가시겠습니까?")
                 .setPositiveButton(
                         "나가기",
-                        (dialog, which) ->
-                                leaveChatRoom()
+                        (dialog, which) -> leaveChatRoom()
                 )
                 .setNegativeButton(
                         "취소",
@@ -1156,12 +1563,8 @@ public class MessageActivity extends AppCompatActivity {
             return;
         }
 
-        ApiService apiService =
-                RetrofitClient.getApiService(
-                        this
-                );
-
-        apiService.leaveRoom(
+        RetrofitClient.getApiService(this)
+                .leaveRoom(
                         roomId,
                         myMemberId
                 )
@@ -1273,60 +1676,15 @@ public class MessageActivity extends AppCompatActivity {
                                     WindowInsetsCompat.Type.ime()
                             );
 
-                    Log.d(
-                            TAG,
-                            "IME 확인 "
-                                    + "imeVisible="
-                                    + insets.isVisible(
-                                    WindowInsetsCompat.Type.ime()
-                            )
-                                    + ", imeBottom="
-                                    + ime.bottom
-                                    + ", systemBottom="
-                                    + systemBars.bottom
-                    );
-
-                    Rect visibleFrame =
-                            new Rect();
-
-                    rootView.getWindowVisibleDisplayFrame(
-                            visibleFrame
-                    );
-
-                    int screenHeight =
-                            rootView.getRootView().getHeight();
-
-                    int fallbackKeyboardHeight =
-                            screenHeight - visibleFrame.bottom;
-
-                    Log.d(
-                            TAG,
-                            "Fallback 확인 "
-                                    + "screenHeight="
-                                    + screenHeight
-                                    + ", visibleBottom="
-                                    + visibleFrame.bottom
-                                    + ", fallbackKeyboardHeight="
-                                    + fallbackKeyboardHeight
-                    );
-
                     boolean keyboardVisible =
                             insets.isVisible(
                                     WindowInsetsCompat.Type.ime()
                             );
 
-                    int bottomInset;
-
-                    if (keyboardVisible) {
-
-                        bottomInset =
-                                ime.bottom;
-
-                    } else {
-
-                        bottomInset =
-                                systemBars.bottom;
-                    }
+                    int bottomInset =
+                            keyboardVisible
+                                    ? ime.bottom
+                                    : systemBars.bottom;
 
                     layoutChatBody.setPadding(
                             layoutChatBody.getPaddingLeft(),
@@ -1358,18 +1716,6 @@ public class MessageActivity extends AppCompatActivity {
                                 150
                         );
                     }
-
-                    Log.d(
-                            TAG,
-                            "Insets 적용 keyboardVisible="
-                                    + keyboardVisible
-                                    + ", systemBottom="
-                                    + systemBars.bottom
-                                    + ", imeBottom="
-                                    + ime.bottom
-                                    + ", bottomInset="
-                                    + bottomInset
-                    );
 
                     return insets;
                 }
@@ -1436,7 +1782,6 @@ public class MessageActivity extends AppCompatActivity {
                 TAG,
                 "현재 활성 채팅방 저장 roomId="
                         + roomId
-
         );
     }
 
@@ -1489,24 +1834,20 @@ public class MessageActivity extends AppCompatActivity {
 
         super.onResume();
 
-        if (roomId > 0) {
-
-            saveActiveChatRoom();
-        }
-
-
+        saveActiveChatRoom();
 
         if (messageController != null
                 && isControllerStarted) {
 
             messageController.onResume();
 
-            messageController.forceReloadChatHistory();
+            refreshCurrentRoomTitle();
         }
 
         if (skipNextResumeMemberReload) {
 
-            skipNextResumeMemberReload = false;
+            skipNextResumeMemberReload =
+                    false;
 
             return;
         }
@@ -1542,193 +1883,10 @@ public class MessageActivity extends AppCompatActivity {
 
             messageController.onDestroy();
 
-            messageController = null;
+            messageController =
+                    null;
         }
 
         super.onDestroy();
     }
-
-    private void handleInviteLink() {
-
-        Intent intent =
-                getIntent();
-
-        Uri data =
-                intent.getData();
-
-        if (data == null) {
-
-            return;
-        }
-
-        List<String> segments =
-                data.getPathSegments();
-
-        if (segments.size() < 3) {
-
-            return;
-        }
-
-        String inviteCode =
-                segments.get(2);
-
-        loadRoomAndJoin(
-                inviteCode
-        );
-    }
-    private void joinRoomByInviteCode(
-            String inviteCode
-    ) {
-
-        if (myMemberId == null
-                || myMemberId <= 0) {
-
-            Toast.makeText(
-                    this,
-                    "로그인 정보가 없습니다.",
-                    Toast.LENGTH_SHORT
-            ).show();
-
-            return;
-        }
-
-        ApiService api =
-                RetrofitClient.getApiService(
-                        this
-                );
-
-        api.joinRoomByInviteCode(
-                inviteCode,
-                myMemberId
-        ).enqueue(new Callback<ResponseBody>() {
-
-            @Override
-            public void onResponse(
-                    Call<ResponseBody> call,
-                    Response<ResponseBody> response
-            ) {
-
-                if (response.isSuccessful()) {
-
-                    Toast.makeText(
-                            MessageActivity.this,
-                            "채팅방에 참여했습니다.",
-                            Toast.LENGTH_SHORT
-                    ).show();
-
-                } else {
-
-                    Toast.makeText(
-                            MessageActivity.this,
-                            "채팅방 참여 실패",
-                            Toast.LENGTH_SHORT
-                    ).show();
-                }
-            }
-
-            @Override
-            public void onFailure(
-                    Call<ResponseBody> call,
-                    Throwable t
-            ) {
-
-                Toast.makeText(
-                        MessageActivity.this,
-                        "서버 연결 실패",
-                        Toast.LENGTH_SHORT
-                ).show();
-            }
-        });
-    }
-
-    private void loadRoomAndJoin(
-            String inviteCode
-    ) {
-
-        ApiService api =
-                RetrofitClient.getApiService(
-                        this
-                );
-
-        api.getRoomByInviteCode(
-                inviteCode
-        ).enqueue(new Callback<ChatRoom>() {
-
-            @Override
-            public void onResponse(
-                    Call<ChatRoom> call,
-                    Response<ChatRoom> response
-            ) {
-
-                if (!response.isSuccessful()
-                        || response.body() == null) {
-
-                    Toast.makeText(
-                            MessageActivity.this,
-                            "채팅방 정보를 찾을 수 없습니다.",
-                            Toast.LENGTH_SHORT
-                    ).show();
-
-                    return;
-                }
-
-                ChatRoom room =
-                        response.body();
-
-                roomId =
-                        room.getRoomId();
-
-                applyRoomTitle(
-                        room.getRoomName()
-                );
-
-                joinRoomByInviteCode(
-                        inviteCode
-                );
-
-                if (messageController != null) {
-
-                    messageController.onDestroy();
-
-                    messageController = null;
-
-                }
-
-                if (roomId > 0) {
-
-                    messageController =
-                            new MessageController(
-                                    MessageActivity.this,
-                                    recyclerView,
-                                    etMessage,
-                                    roomId
-                            );
-
-                    messageController.start();
-
-                    isControllerStarted = true;
-
-                    saveActiveChatRoom();
-                }
-
-
-
-            }
-
-            @Override
-            public void onFailure(
-                    Call<ChatRoom> call,
-                    Throwable t
-            ) {
-
-                Toast.makeText(
-                        MessageActivity.this,
-                        "채팅방 조회 실패",
-                        Toast.LENGTH_SHORT
-                ).show();
-            }
-        });
-    }
-
-
 }

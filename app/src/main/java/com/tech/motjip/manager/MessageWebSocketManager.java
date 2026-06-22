@@ -70,6 +70,18 @@ public class MessageWebSocketManager {
 
         connectedCallbackKey =
                 "connected_room_" + roomId;
+
+        Log.e(
+                "CHAT_REALTIME",
+                "WS_MANAGER_CREATE roomId="
+                        + roomId
+                        + ", messageKey="
+                        + messageSubscribeKey
+                        + ", readKey="
+                        + readSubscribeKey
+                        + ", connectedKey="
+                        + connectedCallbackKey
+        );
     }
 
     public void setMessageCallback(
@@ -78,6 +90,14 @@ public class MessageWebSocketManager {
 
         this.messageCallback =
                 messageCallback;
+
+        Log.e(
+                "CHAT_REALTIME",
+                "WS_SET_MESSAGE_CALLBACK roomId="
+                        + roomId
+                        + ", callbackNull="
+                        + (messageCallback == null)
+        );
     }
 
     public void setReadCallback(
@@ -86,6 +106,14 @@ public class MessageWebSocketManager {
 
         this.readCallback =
                 readCallback;
+
+        Log.e(
+                "CHAT_REALTIME",
+                "WS_SET_READ_CALLBACK roomId="
+                        + roomId
+                        + ", callbackNull="
+                        + (readCallback == null)
+        );
     }
 
     public void setRoomStateCallback(
@@ -94,6 +122,14 @@ public class MessageWebSocketManager {
 
         this.roomStateCallback =
                 roomStateCallback;
+
+        Log.e(
+                "CHAT_REALTIME",
+                "WS_SET_ROOM_STATE_CALLBACK roomId="
+                        + roomId
+                        + ", callbackNull="
+                        + (roomStateCallback == null)
+        );
     }
 
     public StompClient getStompClient() {
@@ -106,9 +142,25 @@ public class MessageWebSocketManager {
         disconnected =
                 false;
 
+        Log.e(
+                "CHAT_REALTIME",
+                "WS_CONNECT_REQUEST roomId="
+                        + roomId
+                        + ", socketConnected="
+                        + socketManager.isConnected()
+        );
+
         socketManager.addConnectedCallback(
                 connectedCallbackKey,
                 () -> {
+
+                    Log.e(
+                            "CHAT_REALTIME",
+                            "WEBSOCKET_CONNECTED roomId="
+                                    + roomId
+                                    + ", messageKey="
+                                    + messageSubscribeKey
+                    );
 
                     subscribeMessageTopic();
 
@@ -116,7 +168,21 @@ public class MessageWebSocketManager {
 
                     if (roomStateCallback != null) {
 
+                        Log.e(
+                                "CHAT_REALTIME",
+                                "ROOM_STATE_CALLBACK_EXECUTE roomId="
+                                        + roomId
+                        );
+
                         roomStateCallback.onConnected();
+
+                    } else {
+
+                        Log.e(
+                                "CHAT_REALTIME",
+                                "ROOM_STATE_CALLBACK_NULL roomId="
+                                        + roomId
+                        );
                     }
                 }
         );
@@ -128,9 +194,13 @@ public class MessageWebSocketManager {
 
     private void subscribeMessageTopic() {
 
-        Log.d(
-                "CHAT_TEST",
+        Log.e(
+                "CHAT_REALTIME",
                 "SUBSCRIBE_MESSAGE_TOPIC roomId="
+                        + roomId
+                        + ", key="
+                        + messageSubscribeKey
+                        + ", topic=/sub/chat/room/"
                         + roomId
         );
 
@@ -141,9 +211,9 @@ public class MessageWebSocketManager {
 
                     try {
 
-                        Log.d(
-                                "CHAT_TEST",
-                                "MESSAGE_RECEIVED payload="
+                        Log.e(
+                                "CHAT_REALTIME",
+                                "RAW_PAYLOAD="
                                         + payload
                         );
 
@@ -278,12 +348,14 @@ public class MessageWebSocketManager {
                                 unreadCount
                         );
 
-                        Log.d(
-                                "CHAT_TEST",
+                        Log.e(
+                                "CHAT_REALTIME",
                                 "MESSAGE_PARSED id="
                                         + receivedMsg.getId()
                                         + ", senderId="
                                         + receivedMsg.getSenderId()
+                                        + ", type="
+                                        + receivedMsg.getMessageType()
                                         + ", content="
                                         + receivedMsg.getMessageContent()
                                         + ", unreadCount="
@@ -294,8 +366,24 @@ public class MessageWebSocketManager {
 
                         if (messageCallback != null) {
 
+                            Log.e(
+                                    "CHAT_REALTIME",
+                                    "CALLBACK_EXECUTE id="
+                                            + receivedMsg.getId()
+                                            + ", content="
+                                            + receivedMsg.getMessageContent()
+                            );
+
                             messageCallback.onMessageReceived(
                                     receivedMsg
+                            );
+
+                        } else {
+
+                            Log.e(
+                                    "CHAT_REALTIME",
+                                    "MESSAGE_CALLBACK_NULL id="
+                                            + receivedMsg.getId()
                             );
                         }
 
@@ -308,7 +396,7 @@ public class MessageWebSocketManager {
                         );
 
                         Log.e(
-                                "CHAT_TEST",
+                                "CHAT_REALTIME",
                                 "MESSAGE_PARSE_ERROR",
                                 e
                         );
@@ -319,10 +407,15 @@ public class MessageWebSocketManager {
 
     private void subscribeReadTopic() {
 
-        Log.d(
-                "CHAT_TEST",
+        Log.e(
+                "CHAT_REALTIME",
                 "SUBSCRIBE_READ_TOPIC roomId="
                         + roomId
+                        + ", key="
+                        + readSubscribeKey
+                        + ", topic=/sub/chat/room/"
+                        + roomId
+                        + "/read"
         );
 
         socketManager.subscribe(
@@ -332,9 +425,9 @@ public class MessageWebSocketManager {
 
                     try {
 
-                        Log.d(
-                                "CHAT_TEST",
-                                "READ_RECEIVED payload="
+                        Log.e(
+                                "CHAT_REALTIME",
+                                "READ_RAW_PAYLOAD="
                                         + payload
                         );
 
@@ -345,8 +438,22 @@ public class MessageWebSocketManager {
 
                         if (readCallback != null) {
 
+                            Log.e(
+                                    "CHAT_REALTIME",
+                                    "READ_CALLBACK_EXECUTE roomId="
+                                            + roomId
+                            );
+
                             readCallback.onReadReceived(
                                     jsonObject
+                            );
+
+                        } else {
+
+                            Log.e(
+                                    "CHAT_REALTIME",
+                                    "READ_CALLBACK_NULL roomId="
+                                            + roomId
                             );
                         }
 
@@ -359,7 +466,7 @@ public class MessageWebSocketManager {
                         );
 
                         Log.e(
-                                "CHAT_TEST",
+                                "CHAT_REALTIME",
                                 "READ_PARSE_ERROR",
                                 e
                         );
@@ -370,6 +477,12 @@ public class MessageWebSocketManager {
 
     public void scheduleReconnect() {
 
+        Log.e(
+                "CHAT_REALTIME",
+                "WS_SCHEDULE_RECONNECT roomId="
+                        + roomId
+        );
+
         socketManager.connect(
                 activity
         );
@@ -379,8 +492,8 @@ public class MessageWebSocketManager {
 
         if (disconnected) {
 
-            Log.d(
-                    "CHAT_TEST",
+            Log.e(
+                    "CHAT_REALTIME",
                     "WS_ROOM_DISCONNECT_SKIP_ALREADY roomId="
                             + roomId
             );
@@ -390,6 +503,12 @@ public class MessageWebSocketManager {
 
         disconnected =
                 true;
+
+        Log.e(
+                "CHAT_REALTIME",
+                "WS_ROOM_DISCONNECT_START roomId="
+                        + roomId
+        );
 
         socketManager.unsubscribe(
                 messageSubscribeKey
@@ -403,8 +522,8 @@ public class MessageWebSocketManager {
                 connectedCallbackKey
         );
 
-        Log.d(
-                "CHAT_TEST",
+        Log.e(
+                "CHAT_REALTIME",
                 "WS_ROOM_UNSUBSCRIBE_CLEAR roomId="
                         + roomId
         );
@@ -412,6 +531,17 @@ public class MessageWebSocketManager {
 
     public boolean isConnected() {
 
-        return socketManager.isConnected();
+        boolean connected =
+                socketManager.isConnected();
+
+        Log.e(
+                "CHAT_REALTIME",
+                "WS_IS_CONNECTED roomId="
+                        + roomId
+                        + ", connected="
+                        + connected
+        );
+
+        return connected;
     }
 }

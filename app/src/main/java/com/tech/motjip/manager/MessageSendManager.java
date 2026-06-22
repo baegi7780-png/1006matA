@@ -11,7 +11,11 @@ import ua.naiksoftware.stomp.StompClient;
 
 public class MessageSendManager {
 
-    private static final String TAG = "MessageSendManager";
+    private static final String TAG =
+            "MessageSendManager";
+
+    private static final String CHAT_REALTIME =
+            "CHAT_REALTIME";
 
     private final MessageActivity activity;
     private final long roomId;
@@ -21,8 +25,11 @@ public class MessageSendManager {
             long roomId
     ) {
 
-        this.activity = activity;
-        this.roomId = roomId;
+        this.activity =
+                activity;
+
+        this.roomId =
+                roomId;
     }
 
     public void sendMessage(
@@ -37,6 +44,16 @@ public class MessageSendManager {
 
         try {
 
+            Log.e(
+                    CHAT_REALTIME,
+                    "SEND_MANAGER_START roomId="
+                            + roomId
+                            + ", userId="
+                            + currentUserId
+                            + ", content="
+                            + content
+            );
+
             if (currentUserId == null
                     || currentUserId <= 0) {
 
@@ -45,6 +62,11 @@ public class MessageSendManager {
                         "사용자 정보를 불러오는 중입니다.",
                         Toast.LENGTH_SHORT
                 ).show();
+
+                Log.e(
+                        CHAT_REALTIME,
+                        "SEND_MANAGER_FAIL_USER_NULL"
+                );
 
                 return;
             }
@@ -58,7 +80,13 @@ public class MessageSendManager {
                         Toast.LENGTH_SHORT
                 ).show();
 
+                Log.e(
+                        CHAT_REALTIME,
+                        "SEND_MANAGER_FAIL_SOCKET_DISCONNECTED"
+                );
+
                 if (onDisconnected != null) {
+
                     onDisconnected.run();
                 }
 
@@ -101,10 +129,43 @@ public class MessageSendManager {
                 );
             }
 
+            Log.e(
+                    CHAT_REALTIME,
+                    "SEND_MANAGER_PAYLOAD="
+                            + payload
+            );
+
             stompClient.send(
                     "/pub/chat/message",
                     payload.toString()
-            ).subscribe();
+            ).subscribe(
+                    () -> {
+
+                        Log.e(
+                                CHAT_REALTIME,
+                                "SEND_MANAGER_SUCCESS destination=/pub/chat/message"
+                        );
+                    },
+                    throwable -> {
+
+                        Log.e(
+                                TAG,
+                                "메시지 전송 실패",
+                                throwable
+                        );
+
+                        Log.e(
+                                CHAT_REALTIME,
+                                "SEND_MANAGER_ERROR",
+                                throwable
+                        );
+
+                        if (onDisconnected != null) {
+
+                            onDisconnected.run();
+                        }
+                    }
+            );
 
         } catch (Exception e) {
 
@@ -114,7 +175,14 @@ public class MessageSendManager {
                     e
             );
 
+            Log.e(
+                    CHAT_REALTIME,
+                    "SEND_MANAGER_EXCEPTION",
+                    e
+            );
+
             if (onDisconnected != null) {
+
                 onDisconnected.run();
             }
         }

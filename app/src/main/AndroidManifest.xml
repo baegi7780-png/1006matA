@@ -19,7 +19,7 @@
         android:dataExtractionRules="@null"
         android:fullBackupContent="@null"
         android:icon="@mipmap/ic_launcher"
-        android:label="맛집"
+        android:label="맛남의광장"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.MotJip"
@@ -98,7 +98,7 @@
             android:exported="true" />
 
         <activity
-            android:name=".HomeActivity"
+            android:name=".MapActivity"
             android:exported="false" />
 
         <activity

@@ -10,6 +10,7 @@ import android.widget.TextView;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.tech.motjip.Config.AppConfig;
 import com.tech.motjip.Model.Message;
 import com.tech.motjip.R;
 import com.tech.motjip.Utils.ImagePreviewDialog;
@@ -21,7 +22,7 @@ public class MessageBindHelper {
             "__UNREAD_DIVIDER__";
 
     private static final String BASE_IMAGE_URL =
-            "https://spiny-impure-laptop.ngrok-free.dev";
+            AppConfig.BASE_URL;
 
     private MessageBindHelper() {
     }
@@ -49,17 +50,12 @@ public class MessageBindHelper {
         if (isImageMessage) {
 
             if (tvMessageContent != null) {
-
-                tvMessageContent.setVisibility(
-                        View.GONE
-                );
+                tvMessageContent.setVisibility(View.GONE);
             }
 
             if (ivMessageImage != null) {
 
-                ivMessageImage.setVisibility(
-                        View.VISIBLE
-                );
+                ivMessageImage.setVisibility(View.VISIBLE);
 
                 String imageUrl =
                         buildImageUrl(
@@ -86,17 +82,12 @@ public class MessageBindHelper {
         } else if (isVideoMessage) {
 
             if (tvMessageContent != null) {
-
-                tvMessageContent.setVisibility(
-                        View.GONE
-                );
+                tvMessageContent.setVisibility(View.GONE);
             }
 
             if (ivMessageImage != null) {
 
-                ivMessageImage.setVisibility(
-                        View.VISIBLE
-                );
+                ivMessageImage.setVisibility(View.VISIBLE);
 
                 String videoUrl =
                         buildImageUrl(
@@ -137,16 +128,12 @@ public class MessageBindHelper {
 
                 ivMessageImage.setOnClickListener(null);
 
-                ivMessageImage.setVisibility(
-                        View.GONE
-                );
+                ivMessageImage.setVisibility(View.GONE);
             }
 
             if (tvMessageContent != null) {
 
-                tvMessageContent.setVisibility(
-                        View.VISIBLE
-                );
+                tvMessageContent.setVisibility(View.VISIBLE);
 
                 tvMessageContent.setText(
                         message.getMessageContent() != null
@@ -159,9 +146,7 @@ public class MessageBindHelper {
                         Linkify.WEB_URLS
                 );
 
-                tvMessageContent.setLinksClickable(
-                        true
-                );
+                tvMessageContent.setLinksClickable(true);
             }
         }
     }
@@ -288,11 +273,6 @@ public class MessageBindHelper {
                         + shouldHideUnread
         );
 
-        /*
-         * 카톡 방식:
-         * 시간은 연속 메시지면 숨길 수 있지만
-         * unreadCount는 각 메시지마다 유지
-         */
         if (unreadCount > 0) {
 
             tvUnreadCount.setVisibility(View.VISIBLE);
@@ -312,31 +292,26 @@ public class MessageBindHelper {
 
         if (currentMessage == null
                 || previousMessage == null) {
-
             return false;
         }
 
         if (isUnreadDivider(currentMessage)
                 || isUnreadDivider(previousMessage)) {
-
             return false;
         }
 
         if (currentMessage.isDateHeader()
                 || previousMessage.isDateHeader()) {
-
             return false;
         }
 
         if (currentMessage.isSystemMessage()
                 || previousMessage.isSystemMessage()) {
-
             return false;
         }
 
         if (currentMessage.getSenderId() == null
                 || previousMessage.getSenderId() == null) {
-
             return false;
         }
 
@@ -365,7 +340,10 @@ public class MessageBindHelper {
                         : 10;
 
         params.topMargin =
-                dpToPx(itemView, topMarginDp);
+                dpToPx(
+                        itemView,
+                        topMarginDp
+                );
 
         itemView.setLayoutParams(params);
     }
@@ -400,7 +378,6 @@ public class MessageBindHelper {
 
         if (imageUrl == null
                 || imageUrl.trim().isEmpty()) {
-
             return null;
         }
 
@@ -409,12 +386,10 @@ public class MessageBindHelper {
 
         if (trimmedUrl.startsWith("http://")
                 || trimmedUrl.startsWith("https://")) {
-
             return trimmedUrl;
         }
 
         if (trimmedUrl.startsWith("/")) {
-
             return BASE_IMAGE_URL + trimmedUrl;
         }
 

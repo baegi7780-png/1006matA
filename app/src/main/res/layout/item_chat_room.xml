@@ -4,32 +4,33 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingStart="14dp"
-    android:paddingTop="6dp"
-    android:paddingEnd="14dp"
-    android:paddingBottom="6dp">
+    android:paddingStart="8dp"
+    android:paddingTop="4dp"
+    android:paddingEnd="8dp"
+    android:paddingBottom="4dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:minHeight="105dp"
         android:background="@drawable/bg_chat_room_card_warm"
         android:elevation="3dp"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingStart="14dp"
-        android:paddingTop="14dp"
+        android:paddingTop="18dp"
         android:paddingEnd="14dp"
-        android:paddingBottom="14dp">
+        android:paddingBottom="18dp">
 
         <FrameLayout
             android:id="@+id/profile_container"
-            android:layout_width="52dp"
-            android:layout_height="52dp">
+            android:layout_width="70dp"
+            android:layout_height="70dp">
 
             <ImageView
                 android:id="@+id/iv_profile_1"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
                 android:layout_gravity="top|start"
                 android:scaleType="centerCrop"
                 android:src="@drawable/default_profile"
@@ -37,8 +38,8 @@
 
             <ImageView
                 android:id="@+id/iv_profile_2"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
                 android:layout_gravity="top|end"
                 android:scaleType="centerCrop"
                 android:src="@drawable/default_profile"
@@ -46,8 +47,8 @@
 
             <ImageView
                 android:id="@+id/iv_profile_3"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
                 android:layout_gravity="bottom|start"
                 android:scaleType="centerCrop"
                 android:src="@drawable/default_profile"
@@ -55,8 +56,8 @@
 
             <ImageView
                 android:id="@+id/iv_profile_4"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
                 android:layout_gravity="bottom|end"
                 android:scaleType="centerCrop"
                 android:src="@drawable/default_profile"
@@ -75,23 +76,23 @@
                 android:id="@+id/tv_room_name"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:maxLines="1"
                 android:ellipsize="end"
+                android:maxLines="1"
                 android:text="상대방 이름"
                 android:textColor="#241C14"
-                android:textSize="16sp"
+                android:textSize="17sp"
                 android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/tv_last_message"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="5dp"
+                android:layout_marginTop="7dp"
                 android:ellipsize="end"
                 android:maxLines="1"
                 android:text="마지막 메시지가 여기에 표시됩니다."
                 android:textColor="#8C8175"
-                android:textSize="13sp" />
+                android:textSize="14sp" />
 
         </LinearLayout>
 
@@ -111,9 +112,9 @@
 
             <TextView
                 android:id="@+id/tv_unread_count"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:layout_marginTop="7dp"
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:layout_marginTop="8dp"
                 android:background="@drawable/bg_chat_unread_badge_warm"
                 android:gravity="center"
                 android:text="1"

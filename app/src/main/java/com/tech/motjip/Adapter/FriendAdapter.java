@@ -13,6 +13,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.tech.motjip.Config.AppConfig;
 import com.tech.motjip.Dto.ResponseDto.FriendRecommendationResponseDto;
 import com.tech.motjip.Dto.ResponseDto.FriendResponseDto;
 import com.tech.motjip.R;
@@ -56,7 +57,8 @@ public class FriendAdapter
     private final List<FriendResponseDto> friends =
             new ArrayList<>();
 
-    private int mode = MODE_FRIEND;
+    private int mode =
+            MODE_FRIEND;
 
     public FriendAdapter(
             Context context,
@@ -158,7 +160,9 @@ public class FriendAdapter
     ) {
 
         FriendResponseDto friend =
-                friends.get(position);
+                friends.get(
+                        position
+                );
 
         holder.tvNickname.setText(
                 friend.getNickname() != null
@@ -192,11 +196,12 @@ public class FriendAdapter
                 friend.getProfileImgUrl();
 
         if (profileImgUrl != null
-                && !profileImgUrl.isEmpty()) {
+                && !profileImgUrl.trim().isEmpty()) {
 
             String imageUrl =
-                    "https://spiny-impure-laptop.ngrok-free.dev"
-                            + profileImgUrl;
+                    buildImageUrl(
+                            profileImgUrl
+                    );
 
             Glide.with(context)
                     .load(imageUrl)
@@ -210,6 +215,33 @@ public class FriendAdapter
                     R.drawable.default_profile
             );
         }
+    }
+
+    private String buildImageUrl(
+            String imageUrl
+    ) {
+
+        if (imageUrl == null
+                || imageUrl.trim().isEmpty()) {
+
+            return "";
+        }
+
+        String trimmedUrl =
+                imageUrl.trim();
+
+        if (trimmedUrl.startsWith("http://")
+                || trimmedUrl.startsWith("https://")) {
+
+            return trimmedUrl;
+        }
+
+        if (trimmedUrl.startsWith("/")) {
+
+            return AppConfig.BASE_URL + trimmedUrl;
+        }
+
+        return AppConfig.BASE_URL + "/" + trimmedUrl;
     }
 
     private void bindDistanceAndStatus(
@@ -477,7 +509,9 @@ public class FriendAdapter
                 @NonNull View itemView
         ) {
 
-            super(itemView);
+            super(
+                    itemView
+            );
 
             ivProfile =
                     itemView.findViewById(

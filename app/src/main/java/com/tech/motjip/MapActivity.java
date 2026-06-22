@@ -11,7 +11,7 @@ import com.tech.motjip.Fragment.CommunityFragment;
 import com.tech.motjip.Fragment.HomeFragment;
 import com.tech.motjip.Fragment.ProfileFragment;
 
-public class HomeActivity extends AppCompatActivity {
+public class MapActivity extends AppCompatActivity {
 
     private BottomNavigationView bottomNavigationView;
 
@@ -31,8 +31,6 @@ public class HomeActivity extends AppCompatActivity {
         communityFragment = new CommunityFragment();
         chatFragment = new ChatFragment();
         profileFragment = new ProfileFragment();
-
-        replaceFragment(homeFragment);
 
         bottomNavigationView.setOnItemSelectedListener(item -> {
 
@@ -54,6 +52,8 @@ public class HomeActivity extends AppCompatActivity {
 
             return false;
         });
+
+        bottomNavigationView.setSelectedItemId(R.id.nav_community);
     }
 
     private void replaceFragment(Fragment fragment) {

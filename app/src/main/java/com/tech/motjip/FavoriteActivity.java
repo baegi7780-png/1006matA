@@ -24,8 +24,6 @@ import retrofit2.Response;
 public class FavoriteActivity
         extends AppCompatActivity {
 
-    private TextView tvCommunityFavorite;
-    private TextView tvRestaurantFavorite;
     private TextView tvFavoriteEmpty;
 
     private RecyclerView recyclerViewFavorite;
@@ -43,12 +41,6 @@ public class FavoriteActivity
         setContentView(
                 R.layout.activity_favorite
         );
-
-        tvCommunityFavorite =
-                findViewById(R.id.tvCommunityFavorite);
-
-        tvRestaurantFavorite =
-                findViewById(R.id.tvRestaurantFavorite);
 
         tvFavoriteEmpty =
                 findViewById(R.id.tvFavoriteEmpty);
@@ -88,69 +80,7 @@ public class FavoriteActivity
                 adapter
         );
 
-        tvCommunityFavorite.setOnClickListener(v -> {
-
-            selectCommunityFavoriteTab();
-
-            loadFavoriteCommunityPosts();
-        });
-
-        tvRestaurantFavorite.setOnClickListener(v -> {
-
-            selectRestaurantFavoriteTab();
-
-            adapter.setPosts(null);
-
-            tvFavoriteEmpty.setVisibility(
-                    View.VISIBLE
-            );
-
-            tvFavoriteEmpty.setText(
-                    "식당 즐겨찾기는 준비 중입니다."
-            );
-        });
-
-        selectCommunityFavoriteTab();
-
         loadFavoriteCommunityPosts();
-    }
-
-    private void selectCommunityFavoriteTab() {
-
-        tvCommunityFavorite.setBackgroundResource(
-                R.drawable.bg_orange_fill_round
-        );
-
-        tvCommunityFavorite.setTextColor(
-                getColor(android.R.color.white)
-        );
-
-        tvRestaurantFavorite.setBackgroundResource(
-                R.drawable.bg_gray_round
-        );
-
-        tvRestaurantFavorite.setTextColor(
-                0xFF444444
-        );
-    }
-
-    private void selectRestaurantFavoriteTab() {
-
-        tvRestaurantFavorite.setBackgroundResource(
-                R.drawable.bg_orange_fill_round
-        );
-
-        tvRestaurantFavorite.setTextColor(
-                getColor(android.R.color.white)
-        );
-
-        tvCommunityFavorite.setBackgroundResource(
-                R.drawable.bg_gray_round
-        );
-
-        tvCommunityFavorite.setTextColor(
-                0xFF444444
-        );
     }
 
     private void loadFavoriteCommunityPosts() {
@@ -191,7 +121,8 @@ public class FavoriteActivity
                         List<CommunityPost> posts =
                                 response.body();
 
-                        if (posts == null || posts.isEmpty()) {
+                        if (posts == null
+                                || posts.isEmpty()) {
 
                             adapter.setPosts(null);
 

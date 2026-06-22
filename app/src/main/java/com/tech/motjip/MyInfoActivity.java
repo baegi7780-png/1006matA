@@ -16,6 +16,7 @@ import com.tech.motjip.API.RetrofitClient;
 import com.tech.motjip.Dto.RequestDto.LogoutRequestDto;
 import com.tech.motjip.Dto.ResponseDto.LoginResponseDto;
 import com.tech.motjip.Utils.DialogUtil;
+import com.tech.motjip.manager.socket.SocketManager;
 import com.yalantis.ucrop.UCrop;
 
 import java.io.File;
@@ -40,14 +41,9 @@ public class MyInfoActivity extends AppCompatActivity {
 
     private static final String PREF_NAME = "AppPrefs";
 
-    private static final String ACCESS_TOKEN =
-            "ACCESS_TOKEN";
-
-    private static final String REFRESH_TOKEN =
-            "REFRESH_TOKEN";
-
-    private static final String LOGIN_STATUS =
-            "LOGIN_STATUS";
+    private static final String ACCESS_TOKEN = "ACCESS_TOKEN";
+    private static final String REFRESH_TOKEN = "REFRESH_TOKEN";
+    private static final String LOGIN_STATUS = "LOGIN_STATUS";
 
     private ActivityResultLauncher<String> imagePickerLauncher;
     private ActivityResultLauncher<Intent> cropImageLauncher;
@@ -59,20 +55,11 @@ public class MyInfoActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_my_info);
 
-        btnEditNickname =
-                findViewById(R.id.btnEditNickname);
-
-        btnEditProfileImage =
-                findViewById(R.id.btnEditProfileImage);
-
-        btnMyStatusSetting =
-                findViewById(R.id.btnMyStatusSetting);
-
-        btnLogout =
-                findViewById(R.id.btnLogout);
-
-        btnDeleteAccount =
-                findViewById(R.id.btnDeleteAccount);
+        btnEditNickname = findViewById(R.id.btnEditNickname);
+        btnEditProfileImage = findViewById(R.id.btnEditProfileImage);
+        btnMyStatusSetting = findViewById(R.id.btnMyStatusSetting);
+        btnLogout = findViewById(R.id.btnLogout);
+        btnDeleteAccount = findViewById(R.id.btnDeleteAccount);
 
         initImagePicker();
 
@@ -104,7 +91,6 @@ public class MyInfoActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
-        // 로그아웃 기능 추가
         btnLogout.setOnClickListener(v -> logout());
 
         btnDeleteAccount.setOnClickListener(v -> {
@@ -168,6 +154,8 @@ public class MyInfoActivity extends AppCompatActivity {
 
     private void clearTokensAndMoveToMain() {
 
+        SocketManager.getInstance().disconnectAll();
+
         SharedPreferences preferences =
                 getSharedPreferences(
                         PREF_NAME,
@@ -179,6 +167,11 @@ public class MyInfoActivity extends AppCompatActivity {
                 .remove(REFRESH_TOKEN)
                 .putInt(LOGIN_STATUS, 0)
                 .apply();
+
+        getSharedPreferences(
+                "chat_state",
+                MODE_PRIVATE
+        ).edit().clear().apply();
 
         Intent intent =
                 new Intent(
@@ -251,9 +244,9 @@ public class MyInfoActivity extends AppCompatActivity {
     private void startCrop(Uri sourceUri) {
 
         String fileName =
-                "profile_" +
-                        System.currentTimeMillis() +
-                        ".jpg";
+                "profile_"
+                        + System.currentTimeMillis()
+                        + ".jpg";
 
         Uri destinationUri =
                 Uri.fromFile(

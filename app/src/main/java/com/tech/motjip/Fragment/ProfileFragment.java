@@ -22,6 +22,7 @@ import androidx.fragment.app.Fragment;
 
 import com.bumptech.glide.Glide;
 import com.tech.motjip.API.RetrofitClient;
+import com.tech.motjip.Config.AppConfig;
 import com.tech.motjip.Dto.RequestDto.LogoutRequestDto;
 import com.tech.motjip.Dto.ResponseDto.LoginResponseDto;
 import com.tech.motjip.FavoriteActivity;
@@ -34,6 +35,7 @@ import com.tech.motjip.MyInfoActivity;
 import com.tech.motjip.NotificationActivity;
 import com.tech.motjip.R;
 import com.tech.motjip.manager.NotificationBadgeManager;
+import com.tech.motjip.manager.socket.SocketManager;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -43,7 +45,6 @@ public class ProfileFragment extends Fragment {
 
     private TextView tvEmail;
     private TextView tvNickname;
-
     private TextView tvNotificationBadge;
 
     private ImageView ivProfileImage;
@@ -62,31 +63,19 @@ public class ProfileFragment extends Fragment {
 
     private boolean isLoadingMyInfo = false;
     private boolean isLoadingUnreadCount = false;
-
     private boolean isBadgeReceiverRegistered = false;
 
     private static final String PREF_NAME = "AppPrefs";
 
-    private static final String ACCESS_TOKEN =
-            "ACCESS_TOKEN";
+    private static final String ACCESS_TOKEN = "ACCESS_TOKEN";
+    private static final String REFRESH_TOKEN = "REFRESH_TOKEN";
+    private static final String LOGIN_STATUS = "LOGIN_STATUS";
 
-    private static final String REFRESH_TOKEN =
-            "REFRESH_TOKEN";
+    private static final String CACHED_EMAIL = "CACHED_EMAIL";
+    private static final String CACHED_NICKNAME = "CACHED_NICKNAME";
+    private static final String CACHED_PROFILE_IMG_URL = "CACHED_PROFILE_IMG_URL";
 
-    private static final String LOGIN_STATUS =
-            "LOGIN_STATUS";
-
-    private static final String CACHED_EMAIL =
-            "CACHED_EMAIL";
-
-    private static final String CACHED_NICKNAME =
-            "CACHED_NICKNAME";
-
-    private static final String CACHED_PROFILE_IMG_URL =
-            "CACHED_PROFILE_IMG_URL";
-
-    private static final String BASE_IMAGE_URL =
-            "https://spiny-impure-laptop.ngrok-free.dev";
+    private static final String BASE_IMAGE_URL = AppConfig.BASE_URL;
 
     private final BroadcastReceiver notificationBadgeReceiver =
             new BroadcastReceiver() {
@@ -133,35 +122,16 @@ public class ProfileFragment extends Fragment {
 
         super.onViewCreated(view, savedInstanceState);
 
-        tvEmail =
-                view.findViewById(R.id.tvEmail);
-
-        tvNickname =
-                view.findViewById(R.id.tvNickname);
-
-        tvNotificationBadge =
-                view.findViewById(R.id.tvNotificationBadge);
-
-        ivProfileImage =
-                view.findViewById(R.id.ivProfileImage);
-
-        btnLogout =
-                view.findViewById(R.id.btnLogout);
-
-        btnFavorite =
-                view.findViewById(R.id.btnFavorite);
-
-        btnFriend =
-                view.findViewById(R.id.btnFriend);
-
-        btnMyCommunity =
-                view.findViewById(R.id.btnMyCommunity);
-
-        btnNotification =
-                view.findViewById(R.id.btnNotification);
-
-        btnSettings =
-                view.findViewById(R.id.btnSettings);
+        tvEmail = view.findViewById(R.id.tvEmail);
+        tvNickname = view.findViewById(R.id.tvNickname);
+        tvNotificationBadge = view.findViewById(R.id.tvNotificationBadge);
+        ivProfileImage = view.findViewById(R.id.ivProfileImage);
+        btnLogout = view.findViewById(R.id.btnLogout);
+        btnFavorite = view.findViewById(R.id.btnFavorite);
+        btnFriend = view.findViewById(R.id.btnFriend);
+        btnMyCommunity = view.findViewById(R.id.btnMyCommunity);
+        btnNotification = view.findViewById(R.id.btnNotification);
+        btnSettings = view.findViewById(R.id.btnSettings);
 
         loadCachedMyInfo();
 
@@ -246,23 +216,18 @@ public class ProfileFragment extends Fragment {
 
             currentUserCall.cancel();
 
-            currentUserCall =
-                    null;
+            currentUserCall = null;
         }
 
         if (unreadNotificationCountCall != null) {
 
             unreadNotificationCountCall.cancel();
 
-            unreadNotificationCountCall =
-                    null;
+            unreadNotificationCountCall = null;
         }
 
-        isLoadingMyInfo =
-                false;
-
-        isLoadingUnreadCount =
-                false;
+        isLoadingMyInfo = false;
+        isLoadingUnreadCount = false;
     }
 
     private void registerNotificationBadgeReceiver() {
@@ -295,8 +260,7 @@ public class ProfileFragment extends Fragment {
             );
         }
 
-        isBadgeReceiverRegistered =
-                true;
+        isBadgeReceiverRegistered = true;
     }
 
     private void unregisterNotificationBadgeReceiver() {
@@ -317,8 +281,7 @@ public class ProfileFragment extends Fragment {
         } catch (Exception ignored) {
         }
 
-        isBadgeReceiverRegistered =
-                false;
+        isBadgeReceiverRegistered = false;
     }
 
     private void loadUnreadNotificationCount() {
@@ -330,8 +293,7 @@ public class ProfileFragment extends Fragment {
             return;
         }
 
-        isLoadingUnreadCount =
-                true;
+        isLoadingUnreadCount = true;
 
         if (unreadNotificationCountCall != null) {
 
@@ -352,8 +314,7 @@ public class ProfileFragment extends Fragment {
                     Response<Long> response
             ) {
 
-                isLoadingUnreadCount =
-                        false;
+                isLoadingUnreadCount = false;
 
                 if (!isAdded()
                         || getContext() == null
@@ -381,8 +342,7 @@ public class ProfileFragment extends Fragment {
                     Throwable t
             ) {
 
-                isLoadingUnreadCount =
-                        false;
+                isLoadingUnreadCount = false;
 
                 if (call.isCanceled()) {
 
@@ -488,8 +448,7 @@ public class ProfileFragment extends Fragment {
             return;
         }
 
-        isLoadingMyInfo =
-                true;
+        isLoadingMyInfo = true;
 
         currentUserCall =
                 RetrofitClient.getApiService(requireContext())
@@ -503,8 +462,7 @@ public class ProfileFragment extends Fragment {
                     Response<LoginResponseDto> response
             ) {
 
-                isLoadingMyInfo =
-                        false;
+                isLoadingMyInfo = false;
 
                 if (!isAdded()
                         || getContext() == null
@@ -516,17 +474,11 @@ public class ProfileFragment extends Fragment {
                 if (response.isSuccessful()
                         && response.body() != null) {
 
-                    LoginResponseDto user =
-                            response.body();
+                    LoginResponseDto user = response.body();
 
-                    String email =
-                            user.getEmail();
-
-                    String nickname =
-                            user.getNickname();
-
-                    String profileImgUrl =
-                            user.getProfileImgUrl();
+                    String email = user.getEmail();
+                    String nickname = user.getNickname();
+                    String profileImgUrl = user.getProfileImgUrl();
 
                     saveMyInfoCache(
                             email,
@@ -580,8 +532,7 @@ public class ProfileFragment extends Fragment {
                     Throwable t
             ) {
 
-                isLoadingMyInfo =
-                        false;
+                isLoadingMyInfo = false;
 
                 if (call.isCanceled()) {
 
@@ -724,6 +675,8 @@ public class ProfileFragment extends Fragment {
 
     private void clearTokensAndMoveToMain() {
 
+        SocketManager.getInstance().disconnectAll();
+
         SharedPreferences preferences =
                 requireActivity().getSharedPreferences(
                         PREF_NAME,
@@ -737,6 +690,15 @@ public class ProfileFragment extends Fragment {
                 .remove(CACHED_NICKNAME)
                 .remove(CACHED_PROFILE_IMG_URL)
                 .putInt(LOGIN_STATUS, 0)
+                .apply();
+
+        requireActivity()
+                .getSharedPreferences(
+                        "chat_state",
+                        requireActivity().MODE_PRIVATE
+                )
+                .edit()
+                .clear()
                 .apply();
 
         Intent intent =

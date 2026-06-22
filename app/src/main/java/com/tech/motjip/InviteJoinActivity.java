@@ -14,25 +14,32 @@ import com.tech.motjip.API.RetrofitClient;
 import com.tech.motjip.Model.ChatRoom;
 
 import java.io.IOException;
-import java.util.List;
 
 import okhttp3.ResponseBody;
+
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
 public class InviteJoinActivity extends AppCompatActivity {
 
-    private static final String TAG = "InviteJoinActivity";
+    private static final String TAG =
+            "InviteJoinActivity";
 
     private ApiService apiService;
 
     private String inviteCode;
+
     private Long memberId;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+    protected void onCreate(
+            Bundle savedInstanceState
+    ) {
+
+        super.onCreate(
+                savedInstanceState
+        );
 
         apiService =
                 RetrofitClient.getApiService(
@@ -44,6 +51,23 @@ public class InviteJoinActivity extends AppCompatActivity {
         );
     }
 
+    @Override
+    protected void onNewIntent(
+            Intent intent
+    ) {
+
+        super.onNewIntent(
+                intent
+        );
+
+        setIntent(
+                intent
+        );
+
+        handleInviteDeepLink(
+                intent
+        );
+    }
 
     private void handleInviteDeepLink(
             Intent intent
@@ -72,28 +96,14 @@ public class InviteJoinActivity extends AppCompatActivity {
 
         Log.d(
                 TAG,
-                "딥링크 URI = " + uri
+                "딥링크 URI = "
+                        + uri
         );
-
-        List<String> segments =
-                uri.getPathSegments();
-
-        Log.d(
-                TAG,
-                "segments = " + segments
-        );
-
-        if (segments.size() < 2) {
-
-            showErrorAndGoMain(
-                    "초대 코드가 없습니다."
-            );
-
-            return;
-        }
 
         inviteCode =
-                segments.get(1);
+                uri.getQueryParameter(
+                        "code"
+                );
 
         if (inviteCode == null
                 || inviteCode.trim().isEmpty()) {
@@ -110,7 +120,8 @@ public class InviteJoinActivity extends AppCompatActivity {
 
         Log.d(
                 TAG,
-                "초대 코드 = " + inviteCode
+                "초대 코드 = "
+                        + inviteCode
         );
 
         memberId =
@@ -130,7 +141,9 @@ public class InviteJoinActivity extends AppCompatActivity {
                             MainActivity.class
                     );
 
-
+            mainIntent.addFlags(
+                    Intent.FLAG_ACTIVITY_CLEAR_TOP
+            );
 
             startActivity(
                     mainIntent
@@ -143,7 +156,8 @@ public class InviteJoinActivity extends AppCompatActivity {
 
         Log.d(
                 TAG,
-                "로그인 memberId = " + memberId
+                "로그인 memberId = "
+                        + memberId
         );
 
         joinRoomByInviteCode();
@@ -154,7 +168,7 @@ public class InviteJoinActivity extends AppCompatActivity {
         apiService.joinRoomByInviteCode(
                 inviteCode,
                 memberId
-        ).enqueue(new Callback<ResponseBody>(){
+        ).enqueue(new Callback<ResponseBody>() {
 
             @Override
             public void onResponse(
@@ -193,7 +207,8 @@ public class InviteJoinActivity extends AppCompatActivity {
 
                 Log.d(
                         TAG,
-                        "초대 참여 성공 body = " + response.body()
+                        "초대 참여 성공 code = "
+                                + response.code()
                 );
 
                 loadRoomByInviteCode();
@@ -306,6 +321,7 @@ public class InviteJoinActivity extends AppCompatActivity {
     ) {
 
         if (errorBody == null) {
+
             return null;
         }
 
@@ -316,7 +332,8 @@ public class InviteJoinActivity extends AppCompatActivity {
 
             Log.e(
                     TAG,
-                    "서버 errorBody = " + error
+                    "서버 errorBody = "
+                            + error
             );
 
             return error;
@@ -362,6 +379,18 @@ public class InviteJoinActivity extends AppCompatActivity {
             );
         }
 
+        if (chatRoom.getRoomType() != null) {
+
+            intent.putExtra(
+                    "roomType",
+                    chatRoom.getRoomType()
+            );
+        }
+
+        intent.addFlags(
+                Intent.FLAG_ACTIVITY_CLEAR_TOP
+        );
+
         startActivity(
                 intent
         );
@@ -384,6 +413,7 @@ public class InviteJoinActivity extends AppCompatActivity {
                 );
 
         if (savedMemberId == -1L) {
+
             return null;
         }
 

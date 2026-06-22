@@ -46,57 +46,33 @@ import retrofit2.Response;
 public class ChatFragment extends Fragment {
 
     private RecyclerView recyclerView;
-
     private EditText etChatSearch;
-
     private ChatRoomAdapter adapter;
 
-    private final List<ChatRoom> roomList =
-            new ArrayList<>();
+    private final List<ChatRoom> roomList = new ArrayList<>();
+    private final List<ChatRoom> allRoomList = new ArrayList<>();
 
-    private final List<ChatRoom> allRoomList =
-            new ArrayList<>();
+    private String currentSearchKeyword = "";
 
-    private String currentSearchKeyword =
-            "";
+    private final SocketManager socketManager = SocketManager.getInstance();
 
-    private final SocketManager socketManager =
-            SocketManager.getInstance();
+    private static final String ROOM_LIST_SUBSCRIBE_KEY = "room_list_update";
+    private static final String ROOM_LIST_CONNECTED_KEY = "room_list_connected";
 
-    private static final String ROOM_LIST_SUBSCRIBE_KEY =
-            "room_list_update";
+    private boolean isLoadingRooms = false;
+    private boolean pendingRoomReload = false;
+    private boolean isOpeningChatRoom = false;
+    private boolean isRoomListReceiverRegistered = false;
 
-    private static final String ROOM_LIST_CONNECTED_KEY =
-            "room_list_connected";
-
-    private boolean isLoadingRooms =
-            false;
-
-    private boolean pendingRoomReload =
-            false;
-
-    private boolean isOpeningChatRoom =
-            false;
-
-    private boolean isRoomListReceiverRegistered =
-            false;
-
-    private final String TAG =
-            "ChatFragment";
+    private final String TAG = "ChatFragment";
 
     private final BroadcastReceiver roomListUpdateReceiver =
             new BroadcastReceiver() {
 
                 @Override
-                public void onReceive(
-                        Context context,
-                        Intent intent
-                ) {
+                public void onReceive(Context context, Intent intent) {
 
-                    Log.d(
-                            TAG,
-                            "FCM 채팅방 리스트 갱신 브로드캐스트 수신"
-                    );
+                    Log.d(TAG, "FCM 채팅방 리스트 갱신 브로드캐스트 수신");
 
                     loadChatRooms();
                 }
@@ -114,85 +90,55 @@ public class ChatFragment extends Fragment {
             @Nullable Bundle savedInstanceState
     ) {
 
-        Log.d(
-                TAG,
-                "onCreateView 시작"
+        Log.d(TAG, "onCreateView 시작");
+
+        View view = inflater.inflate(
+                R.layout.fragment_chat,
+                container,
+                false
         );
 
-        View view =
-                inflater.inflate(
-                        R.layout.fragment_chat,
-                        container,
-                        false
-                );
-
-        recyclerView =
-                view.findViewById(
-                        R.id.rv_chat_list
-                );
-
-        etChatSearch =
-                view.findViewById(
-                        R.id.et_chat_search
-                );
+        recyclerView = view.findViewById(R.id.rv_chat_list);
+        etChatSearch = view.findViewById(R.id.et_chat_search);
 
         recyclerView.setLayoutManager(
-                new LinearLayoutManager(
-                        requireContext()
-                )
+                new LinearLayoutManager(requireContext())
         );
 
-        adapter =
-                new ChatRoomAdapter(
-                        roomList,
-                        this::openChatRoom
-                );
-
-        recyclerView.setAdapter(
-                adapter
+        adapter = new ChatRoomAdapter(
+                roomList,
+                this::openChatRoom
         );
+
+        recyclerView.setAdapter(adapter);
 
         disableRecyclerViewChangeAnimation();
 
         setupChatRoomSearch();
 
-        ImageView btnCreateRoom =
-                view.findViewById(
-                        R.id.btn_create_room
-                );
+        ImageView btnCreateRoom = view.findViewById(R.id.btn_create_room);
 
         if (btnCreateRoom != null) {
 
             btnCreateRoom.setOnClickListener(v -> {
 
-                if (!isAdded()
-                        || getContext() == null) {
-
+                if (!isAdded() || getContext() == null) {
                     return;
                 }
 
-                Log.d(
-                        TAG,
-                        "그룹 채팅 생성 버튼 클릭"
+                Log.d(TAG, "그룹 채팅 생성 버튼 클릭");
+
+                Intent intent = new Intent(
+                        requireContext(),
+                        GroupCreateActivity.class
                 );
 
-                Intent intent =
-                        new Intent(
-                                requireContext(),
-                                GroupCreateActivity.class
-                        );
-
-                startActivity(
-                        intent
-                );
+                startActivity(intent);
             });
 
         } else {
 
-            Log.e(
-                    TAG,
-                    "btn_create_room 을 찾을 수 없습니다."
-            );
+            Log.e(TAG, "btn_create_room 을 찾을 수 없습니다.");
         }
 
         loadChatRooms();
@@ -206,11 +152,7 @@ public class ChatFragment extends Fragment {
 
         if (etChatSearch == null) {
 
-            Log.e(
-                    TAG,
-                    "et_chat_search 를 찾을 수 없습니다."
-            );
-
+            Log.e(TAG, "et_chat_search 를 찾을 수 없습니다.");
             return;
         }
 
@@ -241,17 +183,14 @@ public class ChatFragment extends Fragment {
 
                 Log.d(
                         TAG,
-                        "채팅방 검색어 변경 keyword="
-                                + currentSearchKeyword
+                        "채팅방 검색어 변경 keyword=" + currentSearchKeyword
                 );
 
                 applyRoomSearchFilter();
             }
 
             @Override
-            public void afterTextChanged(
-                    Editable s
-            ) {
+            public void afterTextChanged(Editable s) {
 
             }
         });
@@ -264,9 +203,7 @@ public class ChatFragment extends Fragment {
         if (currentSearchKeyword == null
                 || currentSearchKeyword.trim().isEmpty()) {
 
-            roomList.addAll(
-                    allRoomList
-            );
+            roomList.addAll(allRoomList);
 
         } else {
 
@@ -278,25 +215,16 @@ public class ChatFragment extends Fragment {
             for (ChatRoom room : allRoomList) {
 
                 if (room == null) {
-
                     continue;
                 }
 
                 String roomName =
-                        ChatRoomAdapter.getDisplayRoomName(
-                                room
-                        );
+                        ChatRoomAdapter.getDisplayRoomName(room);
 
                 if (roomName != null
-                        && roomName
-                        .toLowerCase()
-                        .contains(
-                                keyword
-                        )) {
+                        && roomName.toLowerCase().contains(keyword)) {
 
-                    roomList.add(
-                            room
-                    );
+                    roomList.add(room);
                 }
             }
         }
@@ -312,7 +240,6 @@ public class ChatFragment extends Fragment {
         );
 
         if (adapter != null) {
-
             adapter.notifyDataSetChanged();
         }
     }
@@ -320,7 +247,6 @@ public class ChatFragment extends Fragment {
     private void disableRecyclerViewChangeAnimation() {
 
         if (recyclerView == null) {
-
             return;
         }
 
@@ -330,17 +256,13 @@ public class ChatFragment extends Fragment {
         if (animator instanceof SimpleItemAnimator) {
 
             ((SimpleItemAnimator) animator)
-                    .setSupportsChangeAnimations(
-                            false
-                    );
+                    .setSupportsChangeAnimations(false);
         }
     }
 
     private Long getLoginMemberId() {
 
-        if (!isAdded()
-                || getContext() == null) {
-
+        if (!isAdded() || getContext() == null) {
             return 0L;
         }
 
@@ -350,68 +272,41 @@ public class ChatFragment extends Fragment {
                         Context.MODE_PRIVATE
                 );
 
-        return authPrefs.getLong(
-                "memberId",
-                0L
-        );
+        return authPrefs.getLong("memberId", 0L);
     }
 
     private void loadChatRooms() {
 
-        Log.d(
-                TAG,
-                "loadChatRooms 시작"
-        );
+        Log.d(TAG, "loadChatRooms 시작");
 
-        if (!isAdded()
-                || getContext() == null) {
+        if (!isAdded() || getContext() == null) {
 
-            Log.e(
-                    TAG,
-                    "loadChatRooms 중단: Fragment attach 안됨"
-            );
-
+            Log.e(TAG, "loadChatRooms 중단: Fragment attach 안됨");
             return;
         }
 
         if (isLoadingRooms) {
 
-            Log.d(
-                    TAG,
-                    "loadChatRooms 중복 호출 감지 → pendingRoomReload 예약"
-            );
+            Log.d(TAG, "loadChatRooms 중복 호출 감지 → pendingRoomReload 예약");
 
-            pendingRoomReload =
-                    true;
-
+            pendingRoomReload = true;
             return;
         }
 
-        Long memberId =
-                getLoginMemberId();
+        Long memberId = getLoginMemberId();
 
-        if (memberId == null
-                || memberId <= 0) {
+        if (memberId == null || memberId <= 0) {
 
-            Log.e(
-                    TAG,
-                    "memberId 없음"
-            );
-
+            Log.e(TAG, "memberId 없음");
             return;
         }
 
-        isLoadingRooms =
-                true;
+        isLoadingRooms = true;
 
         ApiService apiService =
-                RetrofitClient.getApiService(
-                        requireContext()
-                );
+                RetrofitClient.getApiService(requireContext());
 
-        apiService.getMyRooms(
-                memberId
-        ).enqueue(new Callback<List<ChatRoom>>() {
+        apiService.getMyRooms(memberId).enqueue(new Callback<List<ChatRoom>>() {
 
             @Override
             public void onResponse(
@@ -419,39 +314,24 @@ public class ChatFragment extends Fragment {
                     @NonNull Response<List<ChatRoom>> response
             ) {
 
-                isLoadingRooms =
-                        false;
+                isLoadingRooms = false;
 
-                if (!isAdded()
-                        || getView() == null) {
+                if (!isAdded() || getView() == null) {
 
-                    Log.e(
-                            TAG,
-                            "응답 수신 후 Fragment detach 상태"
-                    );
-
+                    Log.e(TAG, "응답 수신 후 Fragment detach 상태");
                     return;
                 }
 
-                Log.d(
-                        TAG,
-                        "getMyRooms 응답 코드: "
-                                + response.code()
-                );
+                Log.d(TAG, "getMyRooms 응답 코드: " + response.code());
 
-                if (response.isSuccessful()
-                        && response.body() != null) {
+                if (response.isSuccessful() && response.body() != null) {
 
                     allRoomList.clear();
-
-                    allRoomList.addAll(
-                            response.body()
-                    );
+                    allRoomList.addAll(response.body());
 
                     for (ChatRoom room : allRoomList) {
 
                         if (room == null) {
-
                             continue;
                         }
 
@@ -470,17 +350,12 @@ public class ChatFragment extends Fragment {
 
                 } else {
 
-                    Log.e(
-                            TAG,
-                            "채팅방 응답 실패: "
-                                    + response.code()
-                    );
+                    Log.e(TAG, "채팅방 응답 실패: " + response.code());
                 }
 
                 if (pendingRoomReload) {
 
-                    pendingRoomReload =
-                            false;
+                    pendingRoomReload = false;
 
                     if (recyclerView != null) {
 
@@ -498,24 +373,17 @@ public class ChatFragment extends Fragment {
                     @NonNull Throwable t
             ) {
 
-                isLoadingRooms =
-                        false;
+                isLoadingRooms = false;
 
                 if (!isAdded()) {
-
                     return;
                 }
 
-                Log.e(
-                        TAG,
-                        "채팅방 로드 실패",
-                        t
-                );
+                Log.e(TAG, "채팅방 로드 실패", t);
 
                 if (pendingRoomReload) {
 
-                    pendingRoomReload =
-                            false;
+                    pendingRoomReload = false;
 
                     if (recyclerView != null) {
 
@@ -531,9 +399,7 @@ public class ChatFragment extends Fragment {
 
     private void connectRoomListSocket() {
 
-        if (!isAdded()
-                || getContext() == null) {
-
+        if (!isAdded() || getContext() == null) {
             return;
         }
 
@@ -543,152 +409,116 @@ public class ChatFragment extends Fragment {
 
                     subscribeRoomUpdate();
 
-                    Log.d(
-                            "CHAT_TEST",
+                    Log.e(
+                            "CHAT_REALTIME",
                             "ROOM_UPDATE_SUBSCRIBED_FORCE"
                     );
                 }
         );
 
-        socketManager.connect(
-                requireContext()
-        );
+        socketManager.connect(requireContext());
     }
 
     private void subscribeRoomUpdate() {
 
-        Long memberId =
-                getLoginMemberId();
+        Log.e(
+                "CHAT_REALTIME",
+                "SUBSCRIBE_ROOM_UPDATE_CALLED"
+        );
 
-        if (memberId == null
-                || memberId <= 0) {
+        Long memberId = getLoginMemberId();
 
+        if (memberId == null || memberId <= 0) {
             return;
         }
 
         String roomUpdateTopic =
-                "/sub/chat/rooms/update/"
-                        + memberId;
+                "/sub/chat/rooms/update/" + memberId;
+
+        Log.e(
+                "CHAT_REALTIME",
+                "ROOM_UPDATE_SUBSCRIBE topic=" + roomUpdateTopic
+        );
 
         socketManager.subscribe(
                 ROOM_LIST_SUBSCRIBE_KEY,
                 roomUpdateTopic,
                 payload -> {
 
-                    Log.d(
-                            "CHAT_TEST",
+                    Log.e(
+                            "CHAT_REALTIME",
                             "ROOM_UPDATE_RECEIVED topic="
                                     + roomUpdateTopic
                                     + ", payload="
                                     + payload
                     );
 
-                    if (!isAdded()
-                            || getActivity() == null) {
-
+                    if (!isAdded() || getActivity() == null) {
                         return;
                     }
 
                     requireActivity().runOnUiThread(() -> {
 
-                        if (!isAdded()
-                                || getView() == null) {
-
+                        if (!isAdded() || getView() == null) {
                             return;
                         }
 
-                        handleRoomUpdatePayload(
-                                payload
-                        );
+                        handleRoomUpdatePayload(payload);
                     });
                 }
         );
     }
 
-    private void handleRoomUpdatePayload(
-            String payload
-    ) {
+    private void handleRoomUpdatePayload(String payload) {
 
         try {
 
-            if (payload == null
-                    || payload.trim().isEmpty()) {
+            if (payload == null || payload.trim().isEmpty()) {
 
-                scheduleRoomReload(
-                        150
-                );
-
+                scheduleRoomReload(150);
                 return;
             }
 
-            JSONObject jsonObject =
-                    new JSONObject(
-                            payload
-                    );
+            JSONObject jsonObject = new JSONObject(payload);
 
-            if (!jsonObject.has(
-                    "roomId"
-            )
-                    || jsonObject.isNull(
-                    "roomId"
-            )) {
+            if (!jsonObject.has("roomId")
+                    || jsonObject.isNull("roomId")) {
 
-                scheduleRoomReload(
-                        150
-                );
-
+                scheduleRoomReload(150);
                 return;
             }
 
             long updatedRoomId =
-                    jsonObject.optLong(
-                            "roomId",
-                            -1L
-                    );
+                    jsonObject.optLong("roomId", -1L);
 
             if (updatedRoomId <= 0) {
 
-                scheduleRoomReload(
-                        150
-                );
-
+                scheduleRoomReload(150);
                 return;
             }
 
             int position =
-                    findRoomPositionById(
-                            updatedRoomId
-                    );
+                    findRoomPositionById(updatedRoomId);
 
             if (position < 0) {
 
-                scheduleRoomReload(
-                        200
-                );
-
+                scheduleRoomReload(200);
                 return;
             }
 
             ChatRoom room =
-                    allRoomList.get(
-                            position
-                    );
+                    allRoomList.get(position);
 
             if (room == null) {
 
-                scheduleRoomReload(
-                        150
-                );
-
+                scheduleRoomReload(150);
                 return;
             }
 
-            boolean changed =
-                    false;
+            boolean changed = false;
 
-            if (jsonObject.has(
-                    "unreadCount"
-            )) {
+            if (jsonObject.has("unreadCount")
+                    && !jsonObject.isNull("unreadCount")) {
 
                 long unreadCount =
                         jsonObject.optLong(
@@ -696,75 +526,67 @@ public class ChatFragment extends Fragment {
                                 room.getUnreadCount()
                         );
 
-                if (room.getUnreadCount()
-                        != unreadCount) {
+                if (room.getUnreadCount() != unreadCount) {
 
-                    room.setUnreadCount(
-                            unreadCount
-                    );
-
-                    changed =
-                            true;
+                    room.setUnreadCount(unreadCount);
+                    changed = true;
                 }
             }
 
-            if (jsonObject.has(
-                    "lastMessage"
-            )) {
+            if (jsonObject.has("lastMessage")
+                    && !jsonObject.isNull("lastMessage")) {
 
-                room.setLastMessage(
+                String lastMessage =
                         jsonObject.optString(
                                 "lastMessage",
                                 room.getLastMessage()
-                        )
-                );
+                        );
 
-                changed =
-                        true;
+                if (!lastMessage.equals(room.getLastMessage())) {
+
+                    room.setLastMessage(lastMessage);
+                    changed = true;
+                }
             }
 
-            if (jsonObject.has(
-                    "lastMessageType"
-            )) {
+            if (jsonObject.has("lastMessageType")
+                    && !jsonObject.isNull("lastMessageType")) {
 
-                room.setLastMessageType(
+                String lastMessageType =
                         jsonObject.optString(
                                 "lastMessageType",
                                 room.getLastMessageType()
-                        )
-                );
+                        );
 
-                changed =
-                        true;
+                if (!lastMessageType.equals(room.getLastMessageType())) {
+
+                    room.setLastMessageType(lastMessageType);
+                    changed = true;
+                }
             }
 
-            if (jsonObject.has(
-                    "time"
-            )) {
+            if (jsonObject.has("time")
+                    && !jsonObject.isNull("time")) {
 
-                room.setTime(
+                String time =
                         jsonObject.optString(
                                 "time",
                                 room.getTime()
-                        )
-                );
-
-                changed =
-                        true;
-            }
-
-            if (changed
-                    && adapter != null) {
-
-                ChatRoom updatedRoom =
-                        allRoomList.remove(
-                                position
                         );
 
-                allRoomList.add(
-                        0,
-                        updatedRoom
-                );
+                if (!time.equals(room.getTime())) {
+
+                    room.setTime(time);
+                    changed = true;
+                }
+            }
+
+            if (changed && adapter != null) {
+
+                ChatRoom updatedRoom =
+                        allRoomList.remove(position);
+
+                allRoomList.add(0, updatedRoom);
 
                 applyRoomSearchFilter();
 
@@ -776,9 +598,7 @@ public class ChatFragment extends Fragment {
 
                         if (recyclerView != null) {
 
-                            recyclerView.scrollToPosition(
-                                    0
-                            );
+                            recyclerView.scrollToPosition(0);
                         }
                     });
                 }
@@ -792,27 +612,19 @@ public class ChatFragment extends Fragment {
                     e
             );
 
-            scheduleRoomReload(
-                    300
-            );
+            scheduleRoomReload(300);
         }
     }
 
-    private void scheduleRoomReload(
-            long delayMillis
-    ) {
+    private void scheduleRoomReload(long delayMillis) {
 
-        if (!isAdded()
-                || recyclerView == null) {
-
+        if (!isAdded() || recyclerView == null) {
             return;
         }
 
         if (isLoadingRooms) {
 
-            pendingRoomReload =
-                    true;
-
+            pendingRoomReload = true;
             return;
         }
 
@@ -822,40 +634,11 @@ public class ChatFragment extends Fragment {
         );
     }
 
-    private boolean safeEquals(
-            Object a,
-            Object b
-    ) {
+    private int findRoomPositionById(long roomId) {
 
-        if (a == null
-                && b == null) {
+        for (int i = 0; i < allRoomList.size(); i++) {
 
-            return true;
-        }
-
-        if (a == null
-                || b == null) {
-
-            return false;
-        }
-
-        return a.equals(
-                b
-        );
-    }
-
-    private int findRoomPositionById(
-            long roomId
-    ) {
-
-        for (int i = 0;
-             i < allRoomList.size();
-             i++) {
-
-            ChatRoom room =
-                    allRoomList.get(
-                            i
-                    );
+            ChatRoom room = allRoomList.get(i);
 
             if (room != null
                     && room.getRoomId() != null
@@ -868,13 +651,9 @@ public class ChatFragment extends Fragment {
         return -1;
     }
 
-    private void openChatRoom(
-            ChatRoom room
-    ) {
+    private void openChatRoom(ChatRoom room) {
 
-        if (isLoadingRooms
-                || isOpeningChatRoom) {
-
+        if (isLoadingRooms || isOpeningChatRoom) {
             return;
         }
 
@@ -901,9 +680,7 @@ public class ChatFragment extends Fragment {
         }
 
         String displayName =
-                ChatRoomAdapter.getDisplayRoomName(
-                        room
-                );
+                ChatRoomAdapter.getDisplayRoomName(room);
 
         Intent intent =
                 new Intent(
@@ -911,27 +688,13 @@ public class ChatFragment extends Fragment {
                         MessageActivity.class
                 );
 
-        intent.putExtra(
-                "roomId",
-                room.getRoomId()
-        );
+        intent.putExtra("roomId", room.getRoomId());
+        intent.putExtra("roomName", displayName);
+        intent.putExtra("roomType", room.getRoomType());
 
-        intent.putExtra(
-                "roomName",
-                displayName
-        );
+        isOpeningChatRoom = true;
 
-        intent.putExtra(
-                "roomType",
-                room.getRoomType()
-        );
-
-        isOpeningChatRoom =
-                true;
-
-        startActivity(
-                intent
-        );
+        startActivity(intent);
     }
 
     private void registerRoomListUpdateReceiver() {
@@ -964,8 +727,7 @@ public class ChatFragment extends Fragment {
             );
         }
 
-        isRoomListReceiverRegistered =
-                true;
+        isRoomListReceiverRegistered = true;
     }
 
     private void unregisterRoomListUpdateReceiver() {
@@ -985,15 +747,10 @@ public class ChatFragment extends Fragment {
 
         } catch (Exception e) {
 
-            Log.e(
-                    TAG,
-                    "receiver 해제 실패",
-                    e
-            );
+            Log.e(TAG, "receiver 해제 실패", e);
         }
 
-        isRoomListReceiverRegistered =
-                false;
+        isRoomListReceiverRegistered = false;
     }
 
     @Override
@@ -1001,8 +758,7 @@ public class ChatFragment extends Fragment {
 
         super.onResume();
 
-        isOpeningChatRoom =
-                false;
+        isOpeningChatRoom = false;
 
         registerRoomListUpdateReceiver();
 
@@ -1031,29 +787,17 @@ public class ChatFragment extends Fragment {
 
         super.onDestroyView();
 
-        socketManager.unsubscribe(
-                ROOM_LIST_SUBSCRIBE_KEY
-        );
+        socketManager.unsubscribe(ROOM_LIST_SUBSCRIBE_KEY);
 
-        socketManager.removeConnectedCallback(
-                ROOM_LIST_CONNECTED_KEY
-        );
+        socketManager.removeConnectedCallback(ROOM_LIST_CONNECTED_KEY);
 
         unregisterRoomListUpdateReceiver();
 
-        pendingRoomReload =
-                false;
+        pendingRoomReload = false;
+        isOpeningChatRoom = false;
 
-        isOpeningChatRoom =
-                false;
-
-        recyclerView =
-                null;
-
-        etChatSearch =
-                null;
-
-        adapter =
-                null;
+        recyclerView = null;
+        etChatSearch = null;
+        adapter = null;
     }
 }

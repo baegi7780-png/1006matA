@@ -23,6 +23,7 @@ import com.google.firebase.messaging.FirebaseMessaging;
 import com.tech.motjip.API.ApiService;
 import com.tech.motjip.API.RetrofitClient;
 import com.tech.motjip.Auth.TokenManager;
+import com.tech.motjip.Config.AppConfig;
 import com.tech.motjip.Controller.MainController;
 import com.tech.motjip.Dto.RequestDto.FcmTokenRequestDto;
 import com.tech.motjip.Dto.RequestDto.UpdateLocationRequestDto;
@@ -49,6 +50,9 @@ public class MainActivity extends BaseActivity
 
     private static final int LOCATION_PERMISSION_REQUEST_CODE =
             3001;
+
+    private static final String GOOGLE_CLIENT_ID =
+            "733059527774-sb6lg9a1nfiuicv713h62gr9kvjmfpul.apps.googleusercontent.com";
 
     private MainController mainController;
 
@@ -297,8 +301,10 @@ public class MainActivity extends BaseActivity
 
             String url =
                     "https://accounts.google.com/o/oauth2/v2/auth?"
-                            + "client_id=578669991449-hd5p76amsc8mcfmp00lbbpnahlj9edcg.apps.googleusercontent.com"
-                            + "&redirect_uri=https://spiny-impure-laptop.ngrok-free.dev/login/oauth2/code/google"
+                            + "client_id="
+                            + GOOGLE_CLIENT_ID
+                            + "&redirect_uri="
+                            + AppConfig.GOOGLE_REDIRECT_URI
                             + "&response_type=code"
                             + "&scope=openid%20email%20profile";
 
@@ -507,13 +513,13 @@ public class MainActivity extends BaseActivity
 
             Log.d(
                     TAG,
-                    "닉네임 있음 → HomeActivity 이동"
+                    "닉네임 있음 → MapActivity 이동"
             );
 
             Intent intent =
                     new Intent(
                             MainActivity.this,
-                            HomeActivity.class
+                            MapActivity.class
                     );
 
             intent.putExtra(

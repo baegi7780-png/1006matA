@@ -8,6 +8,10 @@ public class ChatRoom {
 
     private String roomName;
 
+    // true = 사용자가 직접 입력한 채팅방 이름
+    // false = 참여자 닉네임 기반 동적 제목
+    private boolean customRoomName;
+
     private String roomType;
 
     private String opponentNickname;
@@ -55,6 +59,14 @@ public class ChatRoom {
 
     public void setRoomName(String roomName) {
         this.roomName = roomName;
+    }
+
+    public boolean isCustomRoomName() {
+        return customRoomName;
+    }
+
+    public void setCustomRoomName(boolean customRoomName) {
+        this.customRoomName = customRoomName;
     }
 
     public String getRoomType() {
@@ -133,5 +145,4 @@ public class ChatRoom {
         this.participantProfileImages =
                 participantProfileImages;
     }
-
 }

@@ -7,6 +7,7 @@ import android.os.Looper;
 import android.util.Log;
 
 import com.tech.motjip.Auth.TokenManager;
+import com.tech.motjip.Config.AppConfig;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -33,7 +34,7 @@ public class SocketManager {
             "SocketManager";
 
     private static final String SOCKET_URL =
-            "wss://spiny-impure-laptop.ngrok-free.dev/ws/chat/websocket";
+            AppConfig.WS_URL;
 
     private static SocketManager instance;
 
@@ -70,10 +71,12 @@ public class SocketManager {
                 public void run() {
 
                     if (isDestroyed) {
+
                         return;
                     }
 
                     if (appContext == null) {
+
                         return;
                     }
 
@@ -85,8 +88,8 @@ public class SocketManager {
                                 "Socket 재연결 시도"
                         );
 
-                        Log.d(
-                                "CHAT_TEST",
+                        Log.e(
+                                "CHAT_REALTIME",
                                 "SOCKET_RECONNECT_TRY"
                         );
 
@@ -121,6 +124,12 @@ public class SocketManager {
     ) {
 
         if (context == null) {
+
+            Log.e(
+                    "CHAT_REALTIME",
+                    "SOCKET_CONNECT_SKIP_CONTEXT_NULL"
+            );
+
             return;
         }
 
@@ -133,20 +142,18 @@ public class SocketManager {
         if (stompClient != null
                 && stompClient.isConnected()) {
 
-            Log.d(
-                    "CHAT_TEST",
+            Log.e(
+                    "CHAT_REALTIME",
                     "SOCKET_CONNECT_SKIP_ALREADY_CONNECTED"
             );
-
-            notifyConnectedCallbacks();
 
             return;
         }
 
         if (isConnecting) {
 
-            Log.d(
-                    "CHAT_TEST",
+            Log.e(
+                    "CHAT_REALTIME",
                     "SOCKET_CONNECT_SKIP_CONNECTING"
             );
 
@@ -180,18 +187,24 @@ public class SocketManager {
                     "Bearer " + accessToken
             );
 
-            Log.d(
-                    "CHAT_TEST",
+            Log.e(
+                    "CHAT_REALTIME",
                     "SOCKET_AUTH_HEADER_ADDED"
             );
 
         } else {
 
             Log.e(
-                    "CHAT_TEST",
+                    "CHAT_REALTIME",
                     "SOCKET_AUTH_TOKEN_EMPTY"
             );
         }
+
+        Log.e(
+                "CHAT_REALTIME",
+                "SOCKET_CONNECT_START url="
+                        + SOCKET_URL
+        );
 
         stompClient =
                 Stomp.over(
@@ -213,8 +226,8 @@ public class SocketManager {
                                             "Socket 연결 성공"
                                     );
 
-                                    Log.d(
-                                            "CHAT_TEST",
+                                    Log.e(
+                                            "CHAT_REALTIME",
                                             "SOCKET_OPENED"
                                     );
 
@@ -243,7 +256,7 @@ public class SocketManager {
                                     );
 
                                     Log.e(
-                                            "CHAT_TEST",
+                                            "CHAT_REALTIME",
                                             "SOCKET_ERROR",
                                             lifecycleEvent.getException()
                                     );
@@ -252,6 +265,8 @@ public class SocketManager {
                                             false;
 
                                     markAllDisconnected();
+
+                                    scheduleReconnect();
 
                                     break;
 
@@ -262,8 +277,8 @@ public class SocketManager {
                                             "Socket 연결 종료"
                                     );
 
-                                    Log.d(
-                                            "CHAT_TEST",
+                                    Log.e(
+                                            "CHAT_REALTIME",
                                             "SOCKET_CLOSED"
                                     );
 
@@ -284,7 +299,7 @@ public class SocketManager {
                                     );
 
                                     Log.e(
-                                            "CHAT_TEST",
+                                            "CHAT_REALTIME",
                                             "SOCKET_FAILED_SERVER_HEARTBEAT"
                                     );
 
@@ -338,7 +353,21 @@ public class SocketManager {
                 callback
         );
 
+        Log.e(
+                "CHAT_REALTIME",
+                "SOCKET_ADD_CONNECTED_CALLBACK key="
+                        + key
+                        + ", connected="
+                        + isConnected()
+        );
+
         if (isConnected()) {
+
+            Log.e(
+                    "CHAT_REALTIME",
+                    "SOCKET_CONNECTED_CALLBACK_EXECUTE_IMMEDIATE key="
+                            + key
+            );
 
             callback.onConnected();
         }
@@ -349,11 +378,18 @@ public class SocketManager {
     ) {
 
         if (key == null) {
+
             return;
         }
 
         connectedCallbackMap.remove(
                 key
+        );
+
+        Log.e(
+                "CHAT_REALTIME",
+                "SOCKET_REMOVE_CONNECTED_CALLBACK key="
+                        + key
         );
     }
 
@@ -380,6 +416,24 @@ public class SocketManager {
 
         if (oldInfo != null) {
 
+            if (oldInfo.topic.equals(
+                    topic
+            )
+                    && oldInfo.disposable != null
+                    && !oldInfo.disposable.isDisposed()
+                    && isConnected()) {
+
+                Log.e(
+                        "CHAT_REALTIME",
+                        "SOCKET_SUBSCRIBE_SKIP_ALREADY_ACTIVE key="
+                                + key
+                                + ", topic="
+                                + topic
+                );
+
+                return;
+            }
+
             oldInfo.dispose();
         }
 
@@ -400,6 +454,16 @@ public class SocketManager {
             subscribeInternal(
                     newInfo
             );
+
+        } else {
+
+            Log.e(
+                    "CHAT_REALTIME",
+                    "SOCKET_SUBSCRIBE_WAIT_CONNECT key="
+                            + key
+                            + ", topic="
+                            + topic
+            );
         }
     }
 
@@ -408,6 +472,7 @@ public class SocketManager {
     ) {
 
         if (key == null) {
+
             return;
         }
 
@@ -419,6 +484,12 @@ public class SocketManager {
         if (info != null) {
 
             info.dispose();
+
+            Log.e(
+                    "CHAT_REALTIME",
+                    "SOCKET_UNSUBSCRIBE key="
+                            + key
+            );
         }
     }
 
@@ -451,8 +522,8 @@ public class SocketManager {
 
         clearClientOnly();
 
-        Log.d(
-                "CHAT_TEST",
+        Log.e(
+                "CHAT_REALTIME",
                 "SOCKET_DISCONNECT_ALL"
         );
     }
@@ -497,10 +568,12 @@ public class SocketManager {
     private synchronized void scheduleReconnect() {
 
         if (isDestroyed) {
+
             return;
         }
 
         if (isReconnecting) {
+
             return;
         }
 
@@ -517,9 +590,20 @@ public class SocketManager {
                 reconnectRunnable,
                 3000
         );
+
+        Log.e(
+                "CHAT_REALTIME",
+                "SOCKET_RECONNECT_SCHEDULED"
+        );
     }
 
     private synchronized void resubscribeAll() {
+
+        Log.e(
+                "CHAT_REALTIME",
+                "SOCKET_RESUBSCRIBE_ALL size="
+                        + subscriptionMap.size()
+        );
 
         for (SubscriptionInfo info : subscriptionMap.values()) {
 
@@ -544,6 +628,20 @@ public class SocketManager {
             return;
         }
 
+        if (info.disposable != null
+                && !info.disposable.isDisposed()) {
+
+            Log.e(
+                    "CHAT_REALTIME",
+                    "SOCKET_SUBSCRIBE_INTERNAL_SKIP_ACTIVE key="
+                            + info.key
+                            + ", topic="
+                            + info.topic
+            );
+
+            return;
+        }
+
         info.dispose();
 
         info.disposable =
@@ -557,6 +655,7 @@ public class SocketManager {
                                 topicMessage.getPayload()
                         );
                     }
+
                 }, throwable -> {
 
                     Log.e(
@@ -569,7 +668,7 @@ public class SocketManager {
                     );
 
                     Log.e(
-                            "CHAT_TEST",
+                            "CHAT_REALTIME",
                             "SOCKET_TOPIC_ERROR key="
                                     + info.key
                                     + ", topic="
@@ -580,8 +679,8 @@ public class SocketManager {
                     info.dispose();
                 });
 
-        Log.d(
-                "CHAT_TEST",
+        Log.e(
+                "CHAT_REALTIME",
                 "SOCKET_SUBSCRIBED key="
                         + info.key
                         + ", topic="
@@ -601,6 +700,12 @@ public class SocketManager {
     }
 
     private synchronized void notifyConnectedCallbacks() {
+
+        Log.e(
+                "CHAT_REALTIME",
+                "SOCKET_NOTIFY_CONNECTED_CALLBACKS size="
+                        + connectedCallbackMap.size()
+        );
 
         for (ConnectedCallback callback : connectedCallbackMap.values()) {
 

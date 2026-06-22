@@ -1,35 +1,88 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<LinearLayout
+<androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp">
+    android:background="#FFF7EA"
+    android:paddingStart="16dp"
+    android:paddingTop="24dp"
+    android:paddingEnd="16dp">
+
+    <TextView
+        android:id="@+id/tv_group_create_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="그룹 채팅 만들기"
+        android:textColor="#241C14"
+        android:textSize="26sp"
+        android:textStyle="bold"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/tv_group_create_subtitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="함께 대화할 친구들을 선택해 주세요"
+        android:textColor="#9B8875"
+        android:textSize="13sp"
+        app:layout_constraintTop_toBottomOf="@id/tv_group_create_title"
+        app:layout_constraintStart_toStartOf="parent" />
 
     <EditText
         android:id="@+id/et_room_name"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_width="0dp"
+        android:layout_height="54dp"
+        android:layout_marginTop="20dp"
+        android:background="@drawable/bg_chat_search_warm"
+        android:gravity="center_vertical"
         android:hint="그룹 채팅방 이름 입력"
+        android:inputType="text"
+        android:imeOptions="actionDone"
         android:maxLength="25"
         android:maxLines="1"
         android:singleLine="true"
-        android:inputType="text"
-        android:imeOptions="actionDone" />
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:textColor="#241C14"
+        android:textColorHint="#B3A89B"
+        android:textSize="14sp"
+        app:layout_constraintTop_toBottomOf="@id/tv_group_create_subtitle"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv_friend_list"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_weight="1"
-        android:layout_marginTop="16dp" />
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="16dp"
+        android:clipToPadding="false"
+        android:paddingBottom="8dp"
+        android:overScrollMode="never"
+        app:layout_constraintTop_toBottomOf="@id/et_room_name"
+        app:layout_constraintBottom_toTopOf="@id/btn_create_group"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/btn_create_group"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_width="0dp"
+        android:layout_height="58dp"
+        android:layout_marginBottom="50dp"
         android:text="그룹 채팅 생성"
-        android:layout_marginTop="16dp" />
+        android:textAllCaps="false"
+        android:textColor="#FFFFFF"
+        android:textSize="17sp"
+        android:textStyle="bold"
+        app:backgroundTint="#F59D31"
+        app:cornerRadius="18dp"
+        app:elevation="4dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
-</LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

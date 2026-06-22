@@ -96,7 +96,7 @@ public class MessageHistoryManager {
                         return;
                     }
 
-                    syncManager.setInitialMessages(
+                    syncManager.mergeMessages(
                             localMessages
                     );
 
@@ -107,7 +107,7 @@ public class MessageHistoryManager {
 
                     Log.d(
                             TAG,
-                            "Room 캐시 메시지 로드 roomId="
+                            "Room 캐시 메시지 병합 로드 roomId="
                                     + roomId
                                     + ", size="
                                     + localMessages.size()
@@ -180,7 +180,7 @@ public class MessageHistoryManager {
                                             currentUserId
                                     );
 
-                            syncManager.setInitialMessages(
+                            syncManager.mergeMessages(
                                     newList
                             );
 
@@ -193,17 +193,9 @@ public class MessageHistoryManager {
                                     100
                             );
 
-                            if (currentUserId != null
-                                    && currentUserId > 0) {
-
-                                roomStateManager.updateReadStatus(
-                                        currentUserId
-                                );
-                            }
-
                             Log.d(
                                     TAG,
-                                    "서버 채팅 내역 로드 완료 size = "
+                                    "서버 채팅 내역 병합 로드 완료 size = "
                                             + newList.size()
                             );
 

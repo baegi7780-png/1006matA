@@ -85,6 +85,74 @@ public class MessageSyncManager {
         );
     }
 
+    public void mergeMessages(
+            List<Message> serverMessages
+    ) {
+
+        List<Message> mergedList =
+                copyMessageList(
+                        messageList
+                );
+
+        if (serverMessages != null) {
+
+            for (Message serverMessage : serverMessages) {
+
+                if (serverMessage == null) {
+
+                    continue;
+                }
+
+                int index =
+                        findMessageIndexFromList(
+                                mergedList,
+                                serverMessage
+                        );
+
+                if (index >= 0) {
+
+                    mergedList.set(
+                            index,
+                            copyMessage(
+                                    serverMessage
+                            )
+                    );
+
+                    Log.d(
+                            TAG,
+                            "서버 메시지 병합 갱신 id="
+                                    + serverMessage.getId()
+                    );
+
+                } else {
+
+                    mergedList.add(
+                            copyMessage(
+                                    serverMessage
+                            )
+                    );
+
+                    Log.d(
+                            TAG,
+                            "서버 메시지 병합 추가 id="
+                                    + serverMessage.getId()
+                    );
+                }
+            }
+        }
+
+        messageList =
+                mergedList;
+
+        submitList();
+
+        Log.d(
+                TAG,
+                "메시지 병합 완료 size="
+                        + messageList.size()
+        );
+    }
+
     public void clearMessages() {
 
         messageList =

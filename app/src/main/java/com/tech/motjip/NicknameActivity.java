@@ -83,7 +83,7 @@ public class NicknameActivity extends AppCompatActivity
 
                 Log.d(
                         TAG,
-                        "이미 닉네임 존재 → HomeActivity 이동"
+                        "이미 닉네임 존재 → MapActivity 이동"
                 );
 
                 LoginStateManager.setLoginStatus(
@@ -94,8 +94,16 @@ public class NicknameActivity extends AppCompatActivity
                 Intent homeIntent =
                         new Intent(
                                 this,
-                                HomeActivity.class
+                                MapActivity.class
                         );
+
+                /*
+                 * 닉네임 화면을 뒤로가기 스택에 남기지 않기 위한 설정
+                 */
+                homeIntent.setFlags(
+                        Intent.FLAG_ACTIVITY_NEW_TASK
+                                | Intent.FLAG_ACTIVITY_CLEAR_TASK
+                );
 
                 startActivity(
                         homeIntent
@@ -330,18 +338,26 @@ public class NicknameActivity extends AppCompatActivity
 
                     Log.d(
                             TAG,
-                            "HomeActivity 이동"
+                            "MapActivity 이동"
                     );
 
                     Intent homeIntent =
                             new Intent(
                                     NicknameActivity.this,
-                                    HomeActivity.class
+                                    MapActivity.class
                             );
 
                     homeIntent.putExtra(
                             "LOGIN_USER_INFO",
                             user
+                    );
+
+                    /*
+                     * 닉네임 설정 후 뒤로가기로 닉네임 화면에 돌아오지 않도록 처리
+                     */
+                    homeIntent.setFlags(
+                            Intent.FLAG_ACTIVITY_NEW_TASK
+                                    | Intent.FLAG_ACTIVITY_CLEAR_TASK
                     );
 
                     startActivity(

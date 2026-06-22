@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.util.Log;
 
+import com.tech.motjip.Config.AppConfig;
 import com.tech.motjip.Dto.RequestDto.RefreshRequestDto;
 import com.tech.motjip.Dto.ResponseDto.TokenResponseDto;
 import com.tech.motjip.MainActivity;
@@ -27,7 +28,7 @@ public class RetrofitClient {
             "RetrofitClientDebug";
 
     public static final String BASE_URL =
-            "https://spiny-impure-laptop.ngrok-free.dev";
+            AppConfig.BASE_URL + "/";
 
     private static final String PREF_NAME =
             "AppPrefs";

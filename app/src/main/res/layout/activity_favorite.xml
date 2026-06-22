@@ -12,45 +12,11 @@
         android:id="@+id/tvFavoriteTitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="즐겨찾기"
-        android:textColor="#222222"
         android:layout_marginTop="35dp"
+        android:text="모임 북마크"
+        android:textColor="#222222"
         android:textSize="34sp"
         android:textStyle="bold" />
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="44dp"
-        android:layout_marginTop="18dp"
-        android:orientation="horizontal">
-
-        <TextView
-            android:id="@+id/tvCommunityFavorite"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:layout_marginEnd="6dp"
-            android:background="@drawable/bg_orange_fill_round"
-            android:gravity="center"
-            android:text="모임 즐겨찾기"
-            android:textColor="@android:color/white"
-            android:textSize="15sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/tvRestaurantFavorite"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:layout_marginStart="6dp"
-            android:background="@drawable/bg_gray_round"
-            android:gravity="center"
-            android:text="식당 즐겨찾기"
-            android:textColor="#444444"
-            android:textSize="15sp"
-            android:textStyle="bold" />
-
-    </LinearLayout>
 
     <TextView
         android:id="@+id/tvFavoriteEmpty"

@@ -13,6 +13,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.tech.motjip.Config.AppConfig;
 import com.tech.motjip.Model.Review;
 import com.tech.motjip.R;
 
@@ -26,7 +27,7 @@ public class PlaceReviewAdapter
             new ArrayList<>();
 
     private static final String BASE_URL =
-            "https://spiny-impure-laptop.ngrok-free.dev";;
+            AppConfig.BASE_URL;
 
     public interface OnReviewActionListener {
 
@@ -341,17 +342,27 @@ public class PlaceReviewAdapter
             String url
     ) {
 
-        if (url == null) {
+        if (url == null
+                || url.trim().isEmpty()) {
+
             return "";
         }
 
-        if (url.startsWith("http://")
-                || url.startsWith("https://")) {
+        String trimmedUrl =
+                url.trim();
 
-            return url;
+        if (trimmedUrl.startsWith("http://")
+                || trimmedUrl.startsWith("https://")) {
+
+            return trimmedUrl;
         }
 
-        return BASE_URL + url;
+        if (trimmedUrl.startsWith("/")) {
+
+            return BASE_URL + trimmedUrl;
+        }
+
+        return BASE_URL + "/" + trimmedUrl;
     }
 
     @Override

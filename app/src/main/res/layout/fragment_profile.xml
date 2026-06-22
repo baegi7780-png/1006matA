@@ -128,7 +128,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="12dp"
-                    android:text="즐겨찾기"
+                    android:text="모임 북마크"
                     android:textColor="#111111"
                     android:textSize="15sp" />
 

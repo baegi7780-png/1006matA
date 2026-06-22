@@ -282,6 +282,8 @@ public class ChatRoomAdapter
                         + room.getRoomId()
                         + ", roomType="
                         + room.getRoomType()
+                        + ", roomName="
+                        + room.getRoomName()
                         + ", unreadCount="
                         + room.getUnreadCount()
         );
@@ -801,34 +803,15 @@ public class ChatRoomAdapter
             @NonNull ChatRoom room
     ) {
 
-        String displayName;
+        if (room.getRoomName() != null
+                && !room.getRoomName()
+                .trim()
+                .isEmpty()) {
 
-        if ("DIRECT".equals(
-                room.getRoomType()
-        )) {
-
-            displayName =
-                    room.getOpponentNickname();
-
-            if (displayName == null
-                    || displayName.trim().isEmpty()) {
-
-                displayName =
-                        "알 수 없는 사용자";
-            }
-
-        } else {
-
-            displayName =
-                    room.getRoomName() != null
-                            && !room.getRoomName()
-                            .trim()
-                            .isEmpty()
-                            ? room.getRoomName()
-                            : room.getRoomId() + "번 방";
+            return room.getRoomName();
         }
 
-        return displayName;
+        return "채팅방";
     }
 
     @Override
