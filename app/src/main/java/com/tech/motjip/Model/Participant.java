@@ -1,3 +1,5 @@
+
+
 package com.tech.motjip.Model;
 
 public class Participant {
@@ -7,6 +9,8 @@ public class Participant {
     private String nickname;
 
     private String profileImgUrl;
+
+    private boolean owner;
 
     public Participant() {
     }
@@ -34,4 +38,13 @@ public class Participant {
     public void setProfileImgUrl(String profileImgUrl) {
         this.profileImgUrl = profileImgUrl;
     }
+
+    public boolean isOwner() {
+        return owner;
+    }
+
+    public void setOwner(boolean owner) {
+        this.owner = owner;
+    }
+
 }

@@ -1,3 +1,5 @@
+
+
 package com.tech.motjip.Adapter;
 
 import android.util.Log;
@@ -102,9 +104,18 @@ public class ParticipantAdapter
                 nickname
         );
 
-        holder.tvNickname.setText(
-                nickname
-        );
+        if (participant.isOwner()) {
+
+            holder.tvNickname.setText(
+                    nickname + " 👑"
+            );
+
+        } else {
+
+            holder.tvNickname.setText(
+                    nickname
+            );
+        }
 
         String profileUrl =
                 buildImageUrl(
@@ -207,3 +218,9 @@ public class ParticipantAdapter
         }
     }
 }
+
+
+
+
+
+
