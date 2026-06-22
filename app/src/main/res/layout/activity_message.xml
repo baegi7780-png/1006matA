@@ -254,7 +254,7 @@
             android:layout_height="50dp"
             android:layout_marginTop="9dp"
             android:background="@drawable/bg_panel_outline_button_warm"
-            android:text="초대 링크 공유"
+            android:text="초대 링크 복사"
             android:textColor="#FF7A1A"
             android:textStyle="bold" />
 

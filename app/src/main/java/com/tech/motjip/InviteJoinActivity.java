@@ -14,6 +14,7 @@ import com.tech.motjip.API.RetrofitClient;
 import com.tech.motjip.Model.ChatRoom;
 
 import java.io.IOException;
+import java.util.List;
 
 import okhttp3.ResponseBody;
 import retrofit2.Call;
@@ -43,20 +44,6 @@ public class InviteJoinActivity extends AppCompatActivity {
         );
     }
 
-    @Override
-    protected void onNewIntent(Intent intent) {
-        super.onNewIntent(
-                intent
-        );
-
-        setIntent(
-                intent
-        );
-
-        handleInviteDeepLink(
-                intent
-        );
-    }
 
     private void handleInviteDeepLink(
             Intent intent
@@ -88,10 +75,25 @@ public class InviteJoinActivity extends AppCompatActivity {
                 "딥링크 URI = " + uri
         );
 
+        List<String> segments =
+                uri.getPathSegments();
+
+        Log.d(
+                TAG,
+                "segments = " + segments
+        );
+
+        if (segments.size() < 2) {
+
+            showErrorAndGoMain(
+                    "초대 코드가 없습니다."
+            );
+
+            return;
+        }
+
         inviteCode =
-                uri.getQueryParameter(
-                        "code"
-                );
+                segments.get(1);
 
         if (inviteCode == null
                 || inviteCode.trim().isEmpty()) {
@@ -128,9 +130,7 @@ public class InviteJoinActivity extends AppCompatActivity {
                             MainActivity.class
                     );
 
-            mainIntent.addFlags(
-                    Intent.FLAG_ACTIVITY_CLEAR_TOP
-            );
+
 
             startActivity(
                     mainIntent
@@ -154,12 +154,12 @@ public class InviteJoinActivity extends AppCompatActivity {
         apiService.joinRoomByInviteCode(
                 inviteCode,
                 memberId
-        ).enqueue(new Callback<String>() {
+        ).enqueue(new Callback<ResponseBody>(){
 
             @Override
             public void onResponse(
-                    Call<String> call,
-                    Response<String> response
+                    Call<ResponseBody> call,
+                    Response<ResponseBody> response
             ) {
 
                 if (!response.isSuccessful()) {
@@ -201,7 +201,7 @@ public class InviteJoinActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(
-                    Call<String> call,
+                    Call<ResponseBody> call,
                     Throwable t
             ) {
 
@@ -361,10 +361,6 @@ public class InviteJoinActivity extends AppCompatActivity {
                     chatRoom.getRoomName()
             );
         }
-
-        intent.addFlags(
-                Intent.FLAG_ACTIVITY_CLEAR_TOP
-        );
 
         startActivity(
                 intent

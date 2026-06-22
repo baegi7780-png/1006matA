@@ -37,6 +37,7 @@ import java.util.Map;
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
 
+import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.POST;
@@ -140,7 +141,7 @@ public interface ApiService {
     );
 
     @POST("/api/chat/invite/{inviteCode}/join")
-    Call<String> joinRoomByInviteCode(
+    Call<ResponseBody> joinRoomByInviteCode(
             @Path("inviteCode") String inviteCode,
             @Query("memberId") Long memberId
     );

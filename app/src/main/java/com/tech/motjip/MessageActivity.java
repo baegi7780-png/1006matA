@@ -42,6 +42,7 @@ import com.tech.motjip.Model.Participant;
 
 import java.util.List;
 
+import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -363,7 +364,7 @@ public class MessageActivity extends AppCompatActivity {
                         -1L
                 );
 
-        handleInviteLink();
+
 
         Intent intent =
                 getIntent();
@@ -371,7 +372,11 @@ public class MessageActivity extends AppCompatActivity {
         Uri deepLinkData =
                 intent.getData();
 
-        if (deepLinkData == null) {
+        if (deepLinkData != null) {
+
+            handleInviteLink();
+
+        } else {
 
             if (!initializeRoomFromIntent(
                     intent
@@ -379,14 +384,22 @@ public class MessageActivity extends AppCompatActivity {
 
                 return;
             }
+
+            if (roomId > 0) {
+
+                messageController =
+                        new MessageController(
+                                this,
+                                recyclerView,
+                                etMessage,
+                                roomId
+                        );
+
+                messageController.start();
+
+                isControllerStarted = true;
+            }
         }
-        messageController =
-                new MessageController(
-                        this,
-                        recyclerView,
-                        etMessage,
-                        roomId
-                );
 
         btnBack.setOnClickListener(v -> {
 
@@ -491,11 +504,9 @@ public class MessageActivity extends AppCompatActivity {
                     .show();
         });
 
-        messageController.start();
 
-        isControllerStarted = true;
 
-        saveActiveChatRoom();
+
 
         recyclerView.postDelayed(() -> {
 
@@ -530,10 +541,21 @@ public class MessageActivity extends AppCompatActivity {
                 "onNewIntent 호출"
         );
 
-        handleNotificationIntent(
-                intent
-        );
+        Uri data =
+                intent.getData();
+
+        if (data != null) {
+
+            handleInviteLink();
+
+        } else {
+
+            handleNotificationIntent(
+                    intent
+            );
+        }
     }
+
 
     private boolean initializeRoomFromIntent(
             Intent intent
@@ -837,27 +859,7 @@ public class MessageActivity extends AppCompatActivity {
                                 Toast.LENGTH_SHORT
                         ).show();
 
-                        Intent shareIntent =
-                                new Intent(
-                                        Intent.ACTION_SEND
-                                );
 
-                        shareIntent.setType(
-                                "text/plain"
-                        );
-
-                        shareIntent.putExtra(
-                                Intent.EXTRA_TEXT,
-                                "같이 밥 먹으러 와!\n\n"
-                                        + inviteUrl
-                        );
-
-                        startActivity(
-                                Intent.createChooser(
-                                        shareIntent,
-                                        "초대 링크 공유"
-                                )
-                        );
                     }
 
                     @Override
@@ -1434,6 +1436,7 @@ public class MessageActivity extends AppCompatActivity {
                 TAG,
                 "현재 활성 채팅방 저장 roomId="
                         + roomId
+
         );
     }
 
@@ -1486,7 +1489,12 @@ public class MessageActivity extends AppCompatActivity {
 
         super.onResume();
 
-        saveActiveChatRoom();
+        if (roomId > 0) {
+
+            saveActiveChatRoom();
+        }
+
+
 
         if (messageController != null
                 && isControllerStarted) {
@@ -1564,7 +1572,7 @@ public class MessageActivity extends AppCompatActivity {
         String inviteCode =
                 segments.get(2);
 
-        joinRoomByInviteCode(
+        loadRoomAndJoin(
                 inviteCode
         );
     }
@@ -1592,12 +1600,12 @@ public class MessageActivity extends AppCompatActivity {
         api.joinRoomByInviteCode(
                 inviteCode,
                 myMemberId
-        ).enqueue(new Callback<String>() {
+        ).enqueue(new Callback<ResponseBody>() {
 
             @Override
             public void onResponse(
-                    Call<String> call,
-                    Response<String> response
+                    Call<ResponseBody> call,
+                    Response<ResponseBody> response
             ) {
 
                 if (response.isSuccessful()) {
@@ -1620,7 +1628,7 @@ public class MessageActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(
-                    Call<String> call,
+                    Call<ResponseBody> call,
                     Throwable t
             ) {
 
@@ -1632,5 +1640,95 @@ public class MessageActivity extends AppCompatActivity {
             }
         });
     }
+
+    private void loadRoomAndJoin(
+            String inviteCode
+    ) {
+
+        ApiService api =
+                RetrofitClient.getApiService(
+                        this
+                );
+
+        api.getRoomByInviteCode(
+                inviteCode
+        ).enqueue(new Callback<ChatRoom>() {
+
+            @Override
+            public void onResponse(
+                    Call<ChatRoom> call,
+                    Response<ChatRoom> response
+            ) {
+
+                if (!response.isSuccessful()
+                        || response.body() == null) {
+
+                    Toast.makeText(
+                            MessageActivity.this,
+                            "채팅방 정보를 찾을 수 없습니다.",
+                            Toast.LENGTH_SHORT
+                    ).show();
+
+                    return;
+                }
+
+                ChatRoom room =
+                        response.body();
+
+                roomId =
+                        room.getRoomId();
+
+                applyRoomTitle(
+                        room.getRoomName()
+                );
+
+                joinRoomByInviteCode(
+                        inviteCode
+                );
+
+                if (messageController != null) {
+
+                    messageController.onDestroy();
+
+                    messageController = null;
+
+                }
+
+                if (roomId > 0) {
+
+                    messageController =
+                            new MessageController(
+                                    MessageActivity.this,
+                                    recyclerView,
+                                    etMessage,
+                                    roomId
+                            );
+
+                    messageController.start();
+
+                    isControllerStarted = true;
+
+                    saveActiveChatRoom();
+                }
+
+
+
+            }
+
+            @Override
+            public void onFailure(
+                    Call<ChatRoom> call,
+                    Throwable t
+            ) {
+
+                Toast.makeText(
+                        MessageActivity.this,
+                        "채팅방 조회 실패",
+                        Toast.LENGTH_SHORT
+                ).show();
+            }
+        });
+    }
+
 
 }
