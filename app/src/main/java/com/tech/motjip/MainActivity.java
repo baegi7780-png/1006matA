@@ -52,8 +52,8 @@ public class MainActivity extends BaseActivity
             3001;
 
     private static final String GOOGLE_CLIENT_ID =
-            "733059527774-sb6lg9a1nfiuicv713h62gr9kvjmfpul.apps.googleusercontent.com";
-
+            //"733059527774-sb6lg9a1nfiuicv713h62gr9kvjmfpul.apps.googleusercontent.com";
+            "578669991449-hd5p76amsc8mcfmp00lbbpnahlj9edcg.apps.googleusercontent.com";
     private MainController mainController;
 
     private FusedLocationProviderClient fusedLocationClient;

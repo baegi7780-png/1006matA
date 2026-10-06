@@ -6,7 +6,8 @@ public final class AppConfig {
     }
 
     public static final String BASE_URL =
-            "https://spout-distant-cost.ngrok-free.dev";
+            //"https://spout-distant-cost.ngrok-free.dev";
+            "https://spiny-impure-laptop.ngrok-free.dev";
 
     public static final String GOOGLE_REDIRECT_URI =
             BASE_URL + "/login/oauth2/code/google";
@@ -18,5 +19,6 @@ public final class AppConfig {
             BASE_URL + "/uploads";
 
     public static final String WS_URL =
-            "wss://spout-distant-cost.ngrok-free.dev/ws/chat/websocket";
+            //"wss://spout-distant-cost.ngrok-free.dev/ws/chat/websocket";
+            "wss://spiny-impure-laptop.ngrok-free.dev/ws/chat/websocket";
 }

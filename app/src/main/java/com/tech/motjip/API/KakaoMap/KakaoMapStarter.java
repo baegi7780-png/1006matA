@@ -25,8 +25,8 @@ public class KakaoMapStarter extends MapLifeCycleCallback {
     // 카카오맵을 표시할 맵뷰입니다.
     private final MapView mapView;
     // 카카오맵에 사용될 네이티브 앱키 입니다.
-    private final String apiKey = "1c820c4c55f310c4d33afecc66a6e8d4";
-    //private final String apiKey = "fc96e5701f247062fd7a0af17ce8e526";
+    //private final String apiKey = "1c820c4c55f310c4d33afecc66a6e8d4";
+    private final String apiKey = "fc96e5701f247062fd7a0af17ce8e526";
 
     //private final String apiKey = "c2f31aa92db76b6d090b77365cf633bd";
 
